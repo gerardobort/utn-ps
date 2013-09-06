@@ -52,7 +52,6 @@ require('./lib/config').loadConfig(configFile, function (config) {
     app.set('db', mongoose.connect(dbConnString, { db: { safe: true }}));
     // this sucks
     app.set('gfs', gridfs(app.get('db').connections[0].db, mongoose.mongo));
-    */
 
     var models_path = __dirname + '/models'
     fs.readdirSync(models_path).forEach(function (file) {
@@ -60,6 +59,7 @@ require('./lib/config').loadConfig(configFile, function (config) {
             require(models_path+'/'+file);
         }
     });
+    */
 
     // inlcude helpers module
     global.helpers = require('./lib/helpers');
