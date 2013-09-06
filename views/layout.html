@@ -5,31 +5,36 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1">
-        <link href="/lib/bootstrap/css/bootstrap.css" media="all" rel="stylesheet" type="text/css" />
-        <link href="/lib/templates/bootstrap.css" media="all" rel="stylesheet" type="text/css" />
-        <link href="/layout.css" media="all" rel="stylesheet" type="text/css" />
+        <style>
+            body {
+                text-align: center;
+                line-height: 100%;
+                height: 100%;
+                position: relative;
+            }
+            span,
+            span:before,
+            span:after {
+                display: inline-table;
+                font: 647px/20px tahoma;
+                color: black;
+                vertical-align: middle;
+                text-shadow: 0 0 10em black;
+                border: 20px solid black;
+                border-radius: 100%;
+                background: peru;
+                box-shadow: inset 0 0 0.07em black;
+                transition: all 200ms;
+            }
+            span:before,
+            span:after {
+                content: '.';
+                background: white;
+                font-size: 0.8em;
+            }
+        </style>
     </head>
     <body>
-        <div class="navbar">
-            <div class="navbar-inner">
-                <a class="brand" href="/">Gerardo Bort</a>
-                <div class="row">
-                </div>
-            </div>
-        </div>
-
-        <div class="container">
-        <%= body %>
-        </div>
-
-        <script src="/lib/jquery.min.js"></script>
-        <script src="/lib/underscore.js"></script>
-        <script src="/lib/backbone.js"></script>
-        <script src="/lib/backbone-deep-model.js"></script>
-        <script src="/lib/bootstrap-modal.js"></script>
-        <script src="/lib/bootstrap/js/bootstrap.js"></script>
-
-        <script src="/lib/require/require-js.js" data-main="/init.js" ></script>
-
+        <span>.</span>
     </body>
 </html>
