@@ -138,11 +138,11 @@ Filter.blur = function (imageData) {
 }
 Filter.sobel = function (imageData) {
     Filter.grayscale(imageData);
-    var vertical = Convolution.Matrix3.convoluteImageData(imageData,
+    var horizontal = Convolution.Matrix3.convoluteImageData(imageData,
           [  0, 0, 0,
              1,-1, 0,
              0, 0, 0 ]);
-    var horizontal = Convolution.Matrix3.convoluteImageData(imageData,
+    var vertical = Convolution.Matrix3.convoluteImageData(imageData,
           [  0,  1,  0,
              0, -1,  0,
              0,  0,  0 ]);
@@ -165,13 +165,13 @@ Filter.sobel = function (imageData) {
 Filter.sobel2 = function (imageData) {
     Filter.grayscale(imageData);
 
-    var vertical = Convolution.Matrix3.convoluteImageData(imageData,
+    var horizontal = Convolution.Matrix3.convoluteImageData(imageData,
           [  0, 0, 0, 0, 0,
              0, 0, 0, 0, 0,
              2, 2,-4, 0, 0,
              0, 0, 0, 0, 0,
              0, 0, 0, 0, 0 ]);
-    var horizontal = Convolution.Matrix3.convoluteImageData(imageData,
+    var vertical = Convolution.Matrix3.convoluteImageData(imageData,
           [  0, 0, 2, 0, 0,
              0, 0, 2, 0, 0,
              0, 0,-4, 0, 0,
@@ -193,18 +193,89 @@ Filter.sobel2 = function (imageData) {
 
     return imageData;
 }
+Filter.sobel3 = function (imageData) {
+    Filter.grayscale(imageData);
+
+    var horizontalLeft = Convolution.Matrix3.convoluteImageData(imageData,
+          [  0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0,
+             2, 2,-4, 0, 0,
+             0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0 ]);
+    var horizontalRight = Convolution.Matrix3.convoluteImageData(imageData,
+          [  0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0,
+             0, 0,-4, 2, 2,
+             0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0 ]);
+    var verticalTop = Convolution.Matrix3.convoluteImageData(imageData,
+          [  0, 0, 2, 0, 0,
+             0, 0, 2, 0, 0,
+             0, 0,-4, 0, 0,
+             0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0 ]);
+    var verticalBottom = Convolution.Matrix3.convoluteImageData(imageData,
+          [  0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0,
+             0, 0,-4, 0, 0,
+             0, 0, 2, 0, 0,
+             0, 0, 2, 0, 0 ]);
+    var tl = Convolution.Matrix3.convoluteImageData(imageData,
+          [  2, 0, 0, 0, 0,
+             0, 2, 0, 0, 0,
+             0, 0,-4, 0, 0,
+             0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0 ]);
+    var tr = Convolution.Matrix3.convoluteImageData(imageData,
+          [  0, 0, 0, 0, 2,
+             0, 0, 0, 2, 0,
+             0, 0,-4, 0, 0,
+             0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0 ]);
+    var bl = Convolution.Matrix3.convoluteImageData(imageData,
+          [  0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0,
+             0, 0,-4, 0, 0,
+             0, 2, 0, 0, 0,
+             2, 0, 0, 0, 0 ]);
+    var br = Convolution.Matrix3.convoluteImageData(imageData,
+          [  0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0,
+             0, 0,-4, 0, 0,
+             0, 0, 0, 2, 0,
+             0, 0, 0, 0, 2 ]);
+
+    var data = imageData.data;
+    for (var i = 0; i < data.length; i+=4) {
+          // make the vertical gradient red
+          var v = Math.abs(((verticalTop.data[i] + verticalBottom.data[i])*2
+            + tl.data[i] + tr.data[i] + bl.data[i] + br.data[i])/8);
+          data[i] = 255 - v;
+          // make the horizontal gradient green
+          var h = Math.abs(((horizontalLeft.data[i] + horizontalRight.data[i])*2
+            + tl.data[i] + tr.data[i] + bl.data[i] + br.data[i])/8);
+          data[i+1] = 255 - h;
+          // and mix in some blue for aesthetics
+          data[i+2] = 255 - (v+h)/4;
+          data[i+3] = Math.abs((v+h)/4); // semi-opaque alpha
+    }
+
+    return imageData;
+}
 Filter.shapeDetector = function (imageData) {
-    Filter.sobel2(imageData);
+    Filter.sobel3(imageData);
 
     var data = imageData.data,
         w = imageData.width,
-        h = imageData.height;
+        h = imageData.height,
+        alpha;
     for (var i = 1; i < h-2; i+=1) { // row
         for (var j = 0; j < w*4; j+=4) { // col
-            data[j+ i*w*4   ] = 255;
+            alpha = data[j+ i*w*4 +3];
+            data[j+ i*w*4   ] = 0;
             data[j+ i*w*4 +1] = 255;
-            data[j+ i*w*4 +2] = 255;
-            //data[j+ i*w*4 +3] = 255;
+            data[j+ i*w*4 +2] = 0;
+            data[j+ i*w*4 +3] = alpha*alpha > 220 ? alpha : 0;
         }
     }
 
