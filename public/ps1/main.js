@@ -92,25 +92,23 @@ var transformadores = [
 
 var manipulators = [
     {
-        name: 'blurred',
+        name: 'none',
         cb: function(r, g, b) {
             return [r, g, b, 255];
         },
-        filter: Filter.blur
-    },
-    {
-        name: 'sobel',
-        cb: function(r, g, b) {
-            return [r, g, b, 255];
-        },
-        filter: Filter.sobel
     },
     {
         name: 'none',
         cb: function(r, g, b) {
             return [r, g, b, 255];
         },
-        filter: Filter.blur
+    },
+    {
+        name: 'hue scale',
+        cb: function(r, g, b) {
+            return [r, g, b, 255];
+        },
+        filter: Filter.hueScale
     },
     {
         name: 'shape detector',

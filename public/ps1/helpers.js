@@ -281,3 +281,48 @@ Filter.shapeDetector = function (imageData) {
 
     return imageData;
 }
+Filter.hueScale = function (imageData) {
+
+    Filter.blur(imageData);
+    var data = imageData.data;
+    
+    var sum = 0;
+    for (var i = 0; i < data.length; i+=4) {
+        var hsl = rgb2hsl(data[i], data[i+1], data[i+2]);
+        data[i] = hsl[2];
+        data[i+1] = hsl[1];
+        sum += hsl[2];
+    }
+    var avg = sum/(data.length/4);
+    for (var i = 0; i < data.length; i+=4) {
+        var l = -data[i+1] + 1.3*data[i];
+        data[i  ] = l < avg ? 0 : 0;
+        data[i+1] = l < avg ? 0 : 0;
+        data[i+2] = l < avg ? 255 : 0;
+        data[i+3] = 255;
+    }
+
+    return imageData;
+}
+
+
+function rgb2hsl(r, g, b){
+    r /= 255, g /= 255, b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+
+    if(max == min){
+        h = s = 0; // achromatic
+    }else{
+        var d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch(max){
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+
+    return [Math.floor(h * 360), Math.floor(s * 100), Math.floor(l * 100)];
+}
