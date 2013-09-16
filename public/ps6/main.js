@@ -127,7 +127,8 @@ CanvasImage.prototype.transform = function() {
                 [5*w/6, h/2] ,
             ], 
         refpointsPoints = [],
-        maxrefpoints = 3;
+        maxrefpoints = 8;
+        maxrefpointsPoints = 0;
 
     // initialize refpointsPoints when taking refpoints from previous frames
     for (var j = 0, l = refpoints.length; j < l; j++) {
@@ -160,10 +161,16 @@ CanvasImage.prototype.transform = function() {
 
             var added = false;
             for (var j = 0, l = refpoints.length; j < l; j++) {
-                if (distance2([x, y], refpoints[j], 0) < 80) { // greek const
+                if (distance2([x, y], refpoints[j], 0) < 90) { // greek const
                     grid[i/4] = j;
                     refpointsPoints[j].push({ x: x, y: y });
+                    //refpoints[j][0] = (refpoints[j][0] + x)/2;
+                    //refpoints[j][1] = (refpoints[j][1] + y)/2;
                     added = true;
+                    if (refpointsPoints.length > maxrefpointsPoints) {
+                        maxrefpointsPoints = refpointsPoints.length;
+                    }
+                    break;
                 }
             }
             if (!added && refpoints.length < maxrefpoints) {
@@ -179,7 +186,7 @@ CanvasImage.prototype.transform = function() {
     var ctx = this.context;
 
     for (var j = 0, l = refpoints.length; j < l; j++) {
-        markPoint(ctx, refpoints[j][0], refpoints[j][1], 5, 'red');
+        //markPoint(ctx, refpoints[j][0], refpoints[j][1], 5, 'red');
     }
 
     // store the count number of matched points
@@ -191,29 +198,44 @@ CanvasImage.prototype.transform = function() {
         allpoints = allpoints.concat(this.points[i]);
     }
 
+
+    // remove groups with not enough elements
+    /*
+    for (var i = 0, l = refpointsPoints.length, r = 0; i < l - r ; i++) {
+        if (refpoints.length < 10) {
+            refpoints.splice(i,1);
+            refpointsPoints.splice(i,1);
+            r++;
+            //i--;
+        }
+    }
+    */
+
     // based on the sumatory of points, calculate the convex hull and paint it
     for (var i = 0, l = refpointsPoints.length; i < l; i++) {
         var rpoints = refpointsPoints[i]||[];
-        if (rpoints.length <= 4) continue; // if it's a small group, then skip it
         this.hull.clear();
         this.hull.compute(rpoints);
         var indices = this.hull.getIndices();
-        if (indices && indices.length > 0) {
+        if (indices && indices.length > 0 && indices.length > 3) {
             ctx.beginPath();
             ctx.moveTo(rpoints[indices[0]].x, rpoints[indices[0]].y);
             var p = avgp = center = [w/2, h/2];
             for (var i2 = 1, l2 = indices.length; i2 < l2; i2++) {
                 p = [rpoints[indices[i2]].x, rpoints[indices[i2]].y];
+                if (i2 > 3 && distance2(p, avgp, 0) > 60) continue;
                 ctx.lineTo(p[0], p[1]);
                 avgp[0] += (p[0] - center[0])/l;
                 avgp[1] += (p[1] - center[1])/l;
             }
             ctx.closePath();
             ctx.fillStyle = "rgba(0, 100, 0, 0.2)";
-            if (1 === i) { ctx.fillStyle = "rgba(100, 0, 0, 0.2)"; }
-            if (2 === i) { ctx.fillStyle = "rgba(0, 0, 100, 0.2)"; }
-            if (3 === i) { ctx.fillStyle = "rgba(100, 100, 0, 0.2)"; }
-            if (4 === i) { ctx.fillStyle = "rgba(0, 100, 100, 0.2)"; }
+            
+            if (1 === i) { ctx.fillStyle = "rgba(100, 0, 0, 0.6)"; }
+            if (2 === i) { ctx.fillStyle = "rgba(0, 0, 100, 0.6)"; }
+            if (3 === i) { ctx.fillStyle = "rgba(100, 100, 0, 0.6)"; }
+            if (4 === i) { ctx.fillStyle = "rgba(0, 100, 100, 0.6)"; }
+            
 
             ctx.strokeStyle = "rgba(100, 100, 100, 0.7)";
             ctx.fill();
@@ -227,7 +249,7 @@ CanvasImage.prototype.transform = function() {
     for (var i = 0, l = this.pointsN-1; i < l; i++) {
         this.points[i] = this.points[i+1];
     }
-    this.points[i-1] = points;
+    this.points[i-1] = [];//points;
 
     /*
     // store the current average point and shift the array
