@@ -67,6 +67,11 @@ CanvasImage.prototype.getData = function() {
     this.avgp2 = [0, 0];
     this.avgp3 = [0, 0];
     this.avgp4 = [0, 0];
+    this.points0 = [];
+    this.points1 = [];
+    this.points2 = [];
+    this.points3 = [];
+    this.points4 = [];
     return this.context.getImageData(0, 0, this.image.width, this.image.height);
 };
 
@@ -101,10 +106,11 @@ CanvasImage.prototype.transform = function() {
         bs1 = bs[1].data,
         bs2 = bs[2].data,
         bs3 = bs[3].data,
-        epsilon = 80,
-        gamma = 2,
+        epsilon = 60,
+        gamma = 3,
+        omega = 5,
         alpha = 0,
-        i = x = y = 0, w = olddata.width, h = olddata.height, span = 5;
+        i = x = y = 0, w = olddata.width, h = olddata.height;
 
 
     var cuadricula = new Int8Array(h*w);
@@ -132,22 +138,13 @@ CanvasImage.prototype.transform = function() {
 
         x = (i/4) % w;
         y = parseInt((i/4) / w);
-        if ((!(x % span) && !(y % span)) && alpha > 255-epsilon) {
-            var it = y*w + (x-(w*span));
-                ib = y*w + (x+(w*span)), 
-                il = y*w + x - span, 
-                ir = y*w + x + span;
-            if (
-                    (bs3[it+3] > 255-epsilon || bs3[ib+3] > 255-epsilon)
-                    && (bs3[il+3] > 255-epsilon || bs3[ir+3] > 255-epsilon)
-                ) {
-                newpx[i+0] = 255;
-                newpx[i+1] = 0;
-                newpx[i+2] = 0;
-                newpx[i+3] = 0; // this is important to make the above if valid for bs3
-                cuadricula[y*w +x] = 1;
-                pointsCounter++;
-            }
+        if ((!(x % omega) && !(y % omega)) && alpha > 255-epsilon) {
+            newpx[i+0] = 255;
+            newpx[i+1] = 0;
+            newpx[i+2] = 0;
+            newpx[i+3] = 0;
+            cuadricula[y*w +x] = 1;
+            pointsCounter++;
         }
     }
 
@@ -158,7 +155,7 @@ CanvasImage.prototype.transform = function() {
     var minx = HV = 99999999,
         maxx = LV = -1;
 
-    var minsx = [], maxsx = [], p, points = [], avgp = center = [w/2, h/2];
+    var minsx = [], maxsx = [], p, points = [], avgp = [w/2, h/2];
 
     if ((pointsCounter >= gamma) && this.i > 2) {
         for (y = 0; y < h; y++) {
@@ -196,16 +193,19 @@ CanvasImage.prototype.transform = function() {
 
     }
 
+
+    var allpoints = points.concat(this.points3).concat(this.points2).concat(this.points1).concat(this.points0);
+
     this.hull.clear();
-    this.hull.compute(points);
+    this.hull.compute(allpoints);
     var indices = this.hull.getIndices();
     if (indices && indices.length > 0) {
         ctx.beginPath();
-        ctx.moveTo(points[indices[0]].x,points[indices[0]].y);
-        var p = farp = center, d = fard = 0, farweight = parseInt(pointsCounter/2);
+        ctx.moveTo(allpoints[indices[0]].x, allpoints[indices[0]].y);
+        var p = farp = center = [w/2, h/2], d = fard = 0, farweight = parseInt(pointsCounter/2);
         for (i = 1, l = indices.length; i < l; i++) {
-            p = [points[indices[i]].x, points[indices[i]].y];
-            //ctx.lineTo(p[0], p[1]);
+            p = [allpoints[indices[i]].x, allpoints[indices[i]].y];
+            ctx.lineTo(p[0], p[1]);
             avgp[0] += (p[0] -w/2)/(l+farweight);
             avgp[1] += (p[1] -h/2)/(l+farweight);
             if ((d = distance2(center, p, 0)) > fard) {
@@ -224,8 +224,14 @@ CanvasImage.prototype.transform = function() {
         ctx.fill();
         ctx.stroke();
 
-        //markPoint(ctx, farp[0], farp[1], 3, 'white');
+        markPoint(ctx, farp[0], farp[1], 3, 'white');
     }
+
+    this.points0 = this.points1;
+    this.points1 = this.points2;
+    this.points2 = this.points3;
+    this.points3 = this.points4;
+    this.points4 = points;
 
     this.avgp0 = this.avgp1;
     this.avgp1 = this.avgp2;
