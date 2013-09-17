@@ -144,7 +144,7 @@ CanvasImage.prototype.transform = function() {
         // change the alpha channel based on the frame differences
         alpha = 255;
         for (var j = 0, l = this.buffersN-1; j < l; j++) {
-            if (distance3(this.buffers[j].data, oldpx, i) < epsilon) {
+            if (distance3(this.buffers[j].data, this.buffers[j+1].data, i) < epsilon) {
                 alpha -= 255/l;
             }
         }
@@ -161,7 +161,7 @@ CanvasImage.prototype.transform = function() {
 
             var added = false;
             for (var j = 0, l = refpoints.length; j < l; j++) {
-                if (distance2([x, y], refpoints[j], 0) < 90) { // greek const
+                if (distance2([x, y], refpoints[j], 0) < 100) { // greek const
                     grid[i/4] = j;
                     refpointsPoints[j].push({ x: x, y: y });
                     //refpoints[j][0] = (refpoints[j][0] + x)/2;
@@ -221,26 +221,34 @@ CanvasImage.prototype.transform = function() {
             ctx.beginPath();
             ctx.moveTo(rpoints[indices[0]].x, rpoints[indices[0]].y);
             var p = avgp = center = [w/2, h/2];
+
+            // calculate avgp
             for (var i2 = 1, l2 = indices.length; i2 < l2; i2++) {
                 p = [rpoints[indices[i2]].x, rpoints[indices[i2]].y];
-                if (i2 > 3 && distance2(p, avgp, 0) > 60) continue;
-                ctx.lineTo(p[0], p[1]);
                 avgp[0] += (p[0] - center[0])/l;
                 avgp[1] += (p[1] - center[1])/l;
             }
+
+            // discard bad points
+            for (var i2 = 1, l2 = indices.length; i2 < l2; i2++) {
+                p = [rpoints[indices[i2]].x, rpoints[indices[i2]].y];
+                if (distance2(p, avgp, 0) > 20) continue;
+            //    ctx.lineTo(p[0], p[1]);
+            }
             ctx.closePath();
-            ctx.fillStyle = "rgba(0, 100, 0, 0.2)";
-            
-            if (1 === i) { ctx.fillStyle = "rgba(100, 0, 0, 0.6)"; }
-            if (2 === i) { ctx.fillStyle = "rgba(0, 0, 100, 0.6)"; }
-            if (3 === i) { ctx.fillStyle = "rgba(100, 100, 0, 0.6)"; }
-            if (4 === i) { ctx.fillStyle = "rgba(0, 100, 100, 0.6)"; }
+            var color = "rgba(0, 100, 0, 0.9)";
+            if (1 === i) { color = "rgba(100, 0, 0, 0.9)"; }
+            if (2 === i) { color = "rgba(0, 0, 100, 0.9)"; }
+            if (3 === i) { color = "rgba(100, 100, 0, 0.9)"; }
+            if (4 === i) { color = "rgba(0, 100, 100, 0.9)"; }
+
+            ctx.fillStyle = color;
             
 
             ctx.strokeStyle = "rgba(100, 100, 100, 0.7)";
             ctx.fill();
             ctx.stroke();
-            markPoint(ctx, avgp[0], avgp[1], 10, 'rgba(200,200,0,0.4)');
+            markPoint(ctx, avgp[0], avgp[1], 10, color);
             points.push(avgp);
         }
     }
@@ -249,7 +257,7 @@ CanvasImage.prototype.transform = function() {
     for (var i = 0, l = this.pointsN-1; i < l; i++) {
         this.points[i] = this.points[i+1];
     }
-    this.points[i-1] = [];//points;
+    this.points[i-1] = points;
 
     /*
     // store the current average point and shift the array
