@@ -92,25 +92,28 @@ CanvasImage.prototype.transform = function() {
         bs1 = bs[1].data,
         bs2 = bs[2].data,
         bs3 = bs[3].data,
-        epsilon=40;
+        epsilon = 40,
+        alpha =0;
 
     for (var i = 0; i < len; i += 4) {
         newpx[i+0] = 0;
         newpx[i+1] = 255;
         newpx[i+2] = 0;
-        newpx[i+3] = 255;
+
+        alpha = 255;
         if (distance3(bs3, oldpx, i) < epsilon) {
-            newpx[i+3] -= 150;
+            alpha -= 150;
         }
         if (distance3(bs2, oldpx, i) < epsilon) {
-            newpx[i+3] -= 50;
+            alpha -= 50;
         }
         if (distance3(bs1, oldpx, i) < epsilon) {
-            newpx[i+3] -= 35;
+            alpha -= 35;
         }
         if (distance3(bs0, oldpx, i) < epsilon) {
-            newpx[i+3] -= 20;
+            alpha -= 20;
         }
+        newpx[i+3] = alpha;
     }
     this.setData(newdata);
 };
