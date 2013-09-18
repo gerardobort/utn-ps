@@ -67,11 +67,6 @@ CanvasImage.prototype.setData = function(data) {
     return this.context.putImageData(data, 0, 0);
 };
 
-CanvasImage.prototype.reset = function() {
-    this.setData(this.original);
-
-}
-
 var distance3 = function (v1, v2, i) {
     return Math.sqrt(Math.pow(v1[i+0] - v2[i+0], 2) + Math.pow(v1[i+1] - v2[i+1], 2) + Math.pow(v1[i+2] - v2[i+2], 2));
 };
@@ -97,23 +92,23 @@ CanvasImage.prototype.transform = function() {
         bs1 = bs[1].data,
         bs2 = bs[2].data,
         bs3 = bs[3].data,
-        eps=60;
+        epsilon=40;
 
     for (var i = 0; i < len; i += 4) {
         newpx[i+0] = 0;
         newpx[i+1] = 255;
         newpx[i+2] = 0;
         newpx[i+3] = 255;
-        if (distance3(bs3, oldpx, i) < eps) {
+        if (distance3(bs3, oldpx, i) < epsilon) {
             newpx[i+3] -= 150;
         }
-        if (distance3(bs2, oldpx, i) < eps) {
+        if (distance3(bs2, oldpx, i) < epsilon) {
             newpx[i+3] -= 50;
         }
-        if (distance3(bs1, oldpx, i) < eps) {
+        if (distance3(bs1, oldpx, i) < epsilon) {
             newpx[i+3] -= 35;
         }
-        if (distance3(bs0, oldpx, i) < eps) {
+        if (distance3(bs0, oldpx, i) < epsilon) {
             newpx[i+3] -= 20;
         }
     }
