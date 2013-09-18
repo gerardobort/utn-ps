@@ -117,7 +117,7 @@ CanvasImage.prototype.transform = function() {
         if (distance3(bs0, oldpx, i) < epsilon) {
             alpha -= 20;
         }
-        newpx[i+3] = 0;
+        newpx[i+3] = alpha*0.2;
 
         x = (i/4) % w;
         y = parseInt((i/4) / w);
@@ -129,6 +129,8 @@ CanvasImage.prototype.transform = function() {
             cuadricula[y*w +x] = 1;
         }
     }
+
+    this.setData(newdata);
 
     var minx = HV = 99999999,
         maxx = LV = -1;
@@ -148,6 +150,7 @@ CanvasImage.prototype.transform = function() {
             newpx[j+1] = 0;
             newpx[j+2] = 255;
             newpx[j+3] = 255;
+            markPoint(this.context, minx, y);
         }
 
         if (maxx !== LV) {
@@ -156,15 +159,21 @@ CanvasImage.prototype.transform = function() {
             newpx[j+1] = 0;
             newpx[j+2] = 255;
             newpx[j+3] = 255;
+            markPoint(this.context, maxx, y);
         }
     }
 
-if (false&&this.i > 10) {
-    console.log(cuadricula);
-    throw "asdf";
-}
+};
 
-    this.setData(newdata);
+var markPoint = function (context, x, y) {
+    var radius = 1;
+    context.beginPath();
+    context.arc(x, y, radius, 0, 2 * Math.PI, false);
+    context.fillStyle = '#fff';
+    context.fill();
+    context.lineWidth = 0;
+    context.strokeStyle = '#fff';
+    context.stroke();
 };
 
 var transformadores = [
