@@ -102,7 +102,7 @@ CanvasImage.prototype.transform = function() {
         bs2 = bs[2].data,
         bs3 = bs[3].data,
         epsilon = 40,
-        gamma = -1,
+        gamma = 5,
         alpha = 0,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
@@ -132,7 +132,7 @@ CanvasImage.prototype.transform = function() {
 
         x = (i/4) % w;
         y = parseInt((i/4) / w);
-        if ((!(x % 3) && !(y % 3)) && alpha > 255-epsilon) {
+        if ((!(x % 5) && !(y % 5)) && alpha > 255-epsilon) {
             newpx[i+0] = 255;
             newpx[i+1] = 0;
             newpx[i+2] = 0;
@@ -142,15 +142,16 @@ CanvasImage.prototype.transform = function() {
         }
     }
 
+    this.pointsCounter = pointsCounter;
+    this.setData(newdata);
+
+    var ctx = this.context;
+    var minx = HV = 99999999,
+        maxx = LV = -1;
+
+    var minsx = [], maxsx = [], p, points = [], avgp = [w/2, h/2];
+
     if ((pointsCounter >= gamma) && this.i > 2) {
-        this.pointsCounter = pointsCounter;
-        this.setData(newdata);
-
-        var ctx = this.context;
-        var minx = HV = 99999999,
-            maxx = LV = -1;
-
-        var minsx = [], maxsx = [], p, points = [], avgp = [w/2, h/2];
         for (y = 0; y < h; y++) {
             minx = HV;
             maxx = LV;
@@ -184,34 +185,47 @@ CanvasImage.prototype.transform = function() {
             }
         }
 
-        this.hull.clear();
-        this.hull.compute(points);
-        var indices = this.hull.getIndices();
-        if (indices && indices.length > 0) {
-            ctx.beginPath();
-            ctx.moveTo(points[indices[0]].x,points[indices[0]].y);
-            for (var i=1, l=indices.length; i < l; i++) {
-                ctx.lineTo(points[indices[i]].x,points[indices[i]].y);
-                ctx.lineTo(points[indices[i]].x,points[indices[i]].y);
-                avgp[0] += (points[indices[i]].x -w/2)/l;
-                avgp[1] += (points[indices[i]].y -h/2)/l;
-            }
-            ctx.closePath();
-            ctx.fillStyle = "rgba(0, 255, 0, 0.1)";
-            ctx.strokeStyle = "rgba(0, 255, 0, 1)";
-            ctx.fill();
-            ctx.stroke();
-        }
-
-        this.avgp0 = this.avgp1;
-        this.avgp1 = this.avgp2;
-        this.avgp2 = this.avgp3;
-        this.avgp3 = this.avgp4;
-        this.avgp4 = avgp;
-        var cx = (this.avgp4[0] + this.avgp3[0] + this.avgp2[0] + this.avgp1[0] + this.avgp0[0]) / 5;
-        var cy = (this.avgp4[1] + this.avgp3[1] + this.avgp2[1] + this.avgp1[1] + this.avgp0[1]) / 5;
-        markPoint(ctx, cx, cy, 10, 'yellow');
     }
+
+    this.hull.clear();
+    this.hull.compute(points);
+    var indices = this.hull.getIndices();
+    if (indices && indices.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(points[indices[0]].x,points[indices[0]].y);
+        var p = farp = center = [w/2, h/2], d = fard = 0, farweight = parseInt(pointsCounter/2);
+        for (i = 1, l = indices.length; i < l; i++) {
+            p = [points[indices[i]].x, points[indices[i]].y];
+            ctx.lineTo(p[0], p[1]);
+            avgp[0] += (p[0] -w/2)/(l+farweight);
+            avgp[1] += (p[1] -h/2)/(l+farweight);
+            if ((d = distance2(center, p, 0)) > fard) {
+                fard = d;
+                farp = p;
+            }
+        }
+        for (i = 0; i < farweight; i++) {
+            avgp[0] += (farp[0] -w/2)/(l+farweight);
+            avgp[1] += (farp[1] -h/2)/(l+farweight);
+        }
+        
+        ctx.closePath();
+        ctx.fillStyle = "rgba(0, 100, 0, 0.2)";
+        ctx.strokeStyle = "rgba(100, 100, 100, 0.7)";
+        ctx.fill();
+        ctx.stroke();
+
+        markPoint(ctx, farp[0], farp[1], 3, 'white');
+    }
+
+    this.avgp0 = this.avgp1;
+    this.avgp1 = this.avgp2;
+    this.avgp2 = this.avgp3;
+    this.avgp3 = this.avgp4;
+    this.avgp4 = avgp;
+    var cx = (this.avgp4[0] + this.avgp3[0] + this.avgp2[0] + this.avgp1[0] + this.avgp0[0]) / 5;
+    var cy = (this.avgp4[1] + this.avgp3[1] + this.avgp2[1] + this.avgp1[1] + this.avgp0[1]) / 5;
+    markPoint(ctx, cx, cy, 10, 'yellow');
 
 };
 
