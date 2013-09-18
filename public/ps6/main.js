@@ -108,7 +108,7 @@ CanvasImage.prototype.transform = function() {
         newpx = newdata.data,
         len = newpx.length;
 
-    var epsilon = 60,
+    var epsilon = 40,
         alpha = 0,
         beta = 160,
         gamma = 3,
@@ -189,15 +189,17 @@ CanvasImage.prototype.transform = function() {
     this.pointsCounter = pointsCounter;
 
     // concatenate the current points with the ones of previous frames 
+    /*
     var allpoints = [];
     for (var i = 0, l = this.pointsN-1; i < l; i++) {
         allpoints = allpoints.concat(this.points[i]);
     }
+    */
 
 
     // remove groups with not enough elements
     for (var i = 0, l = refpointsPoints.length; i < l; i++) {
-        if (refpointsPoints[i].length < 8) {
+        if (refpointsPoints[i].length < 4) {
             refpoints.splice(i,1);
             refpointsPoints.splice(i,1);
             i--; l--;
@@ -213,7 +215,7 @@ CanvasImage.prototype.transform = function() {
         if (indices && indices.length > 0 && indices.length > 3) {
 
             var rp = [rpoints[indices[0]].x, rpoints[indices[0]].y];
-            var p, j, b1, b2, avgp = [w/2, h/2], center = [w/2, h/2], avgc = [0, 0, 0];
+            var p, po, j, b1, b2, goodPoints = [], gpl = 0, avgp = [0, 0], center = [w/2, h/2], avgc = [0, 0, 0];
 
             b1 = this.buffers[this.buffersN-1].data;
             b2 = this.buffers[this.buffersN-2].data;
@@ -221,25 +223,32 @@ CanvasImage.prototype.transform = function() {
             ctx.beginPath();
             ctx.moveTo(rp[0], rp[1]);
 
+            po = rp;
             // calculate avgp
             for (var i2 = 1, l2 = indices.length; i2 < l2; i2++) {
                 p = [rpoints[indices[i2]].x, rpoints[indices[i2]].y];
-                j = (y*w+x)*4;
+                j = (p[1]*w+p[0])*4;
 
                 if (
-                    //distance2(p, avgp, 0) < 100 // space distance 
-                    //&&
-                    distance3(b1, b2, j) < 20 // color distance
+                    distance2(p, po, 0) < 40 // space distance 
+                    && distance3(b1, b2, j) < 40 // color distance
                 ) {
-                    ctx.lineTo(p[0], p[1]);
-
-                    avgp[0] += (p[0] - center[0])/l2;
-                    avgp[1] += (p[1] - center[1])/l2;
-
-                    avgc[0] += b1[j+0]/l2;
-                    avgc[1] += b1[j+1]/l2;
-                    avgc[2] += b1[j+2]/l2;
+                    goodPoints.push(p);
                 }
+                po = p;
+            }
+
+            for (var i2 = 0, l2 = goodPoints.length; i2 < l2; i2++) {
+                p = goodPoints[i2];
+                j = (p[1]*w+p[0])*4;
+                ctx.lineTo(p[0], p[1]);
+
+                avgp[0] += p[0]/l2;
+                avgp[1] += p[1]/l2;
+
+                avgc[0] += b1[j+0]/l2;
+                avgc[1] += b1[j+1]/l2;
+                avgc[2] += b1[j+2]/l2;
             }
 
             ctx.closePath();
@@ -254,9 +263,12 @@ CanvasImage.prototype.transform = function() {
             ctx.fill();
             ctx.stroke();
 
+
+            markPoint(ctx, rp[0], rp[1], 3, 'yellow');
             markPoint(ctx, avgp[0], avgp[1], 6, color);
 
             points.push(avgp);
+            //persistGoodPoints.push(goodPoints);
         }
     }
 
