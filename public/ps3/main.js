@@ -102,7 +102,7 @@ CanvasImage.prototype.transform = function() {
         bs2 = bs[2].data,
         bs3 = bs[3].data,
         epsilon = 40,
-        gamma = 3,
+        gamma = -1,
         alpha = 0,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
@@ -132,7 +132,7 @@ CanvasImage.prototype.transform = function() {
 
         x = (i/4) % w;
         y = parseInt((i/4) / w);
-        if ((!(x % 5) && !(y % 5)) && alpha > 255-epsilon) {
+        if ((!(x % 3) && !(y % 3)) && alpha > 255-epsilon) {
             newpx[i+0] = 255;
             newpx[i+1] = 0;
             newpx[i+2] = 0;
@@ -150,7 +150,7 @@ CanvasImage.prototype.transform = function() {
         var minx = HV = 99999999,
             maxx = LV = -1;
 
-        var minsx = [], maxsx = [], p, points = [], avgp = [0, 0];
+        var minsx = [], maxsx = [], p, points = [], avgp = [w/2, h/2];
         for (y = 0; y < h; y++) {
             minx = HV;
             maxx = LV;
@@ -169,7 +169,7 @@ CanvasImage.prototype.transform = function() {
                 newpx[j+3] = 255;
                 minsx.push([minx, y]);
                 points.push({ x: minx, y: y });
-                markPoint(ctx, minx, y, 1, 'red');
+                //markPoint(ctx, minx, y, 1, 'red');
             }
 
             if (maxx !== LV) {
@@ -180,7 +180,7 @@ CanvasImage.prototype.transform = function() {
                 newpx[j+3] = 255;
                 maxsx.push([maxx, y]);
                 points.push({ x: maxx, y: y });
-                markPoint(ctx, maxx, y, 1, 'blue');
+                //markPoint(ctx, maxx, y, 1, 'blue');
             }
         }
 
@@ -193,8 +193,8 @@ CanvasImage.prototype.transform = function() {
             for (var i=1, l=indices.length; i < l; i++) {
                 ctx.lineTo(points[indices[i]].x,points[indices[i]].y);
                 ctx.lineTo(points[indices[i]].x,points[indices[i]].y);
-                avgp[0] += points[indices[i]].x/l;
-                avgp[1] += points[indices[i]].y/l;
+                avgp[0] += (points[indices[i]].x -w/2)/l;
+                avgp[1] += (points[indices[i]].y -h/2)/l;
             }
             ctx.closePath();
             ctx.fillStyle = "rgba(0, 255, 0, 0.1)";

@@ -12,11 +12,12 @@
                 border: 1px solid black;
                 min-width: 480px;
                 box-sizing: border-box;
-                transform: rotate(-180deg);
+                -webkit-transform: scaleX(-1); /* hack for mirroring */
             }
             video { top: 0; right: 0; background: #000; display: none; }
             #canvas1 { top: 0; left: 0; }
-            #canvas2 { bottom: 0; left: 0; z-index: 1; background: #000; }
+            #canvas1 { width: 100%; height: 100%; }
+            #canvas2 { bottom: 0; left: 0; z-index: 1; background: rgba(0,0,0,0.5); }
             #canvas2 { width: 100%; height: 100%; }
             #canvas2:hover { width: 100%; height: 100%; }
             video:hover,
