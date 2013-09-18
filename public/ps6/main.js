@@ -71,10 +71,16 @@ CanvasImage.prototype.getData = function() {
         this.avgp.push([0, 0]);
     }
 
-    this.pointsN = 6;
-    this.points = [];
-    for (var i = 0, l = this.pointsN; i < l; i++) {
-        this.points.push([]);
+    this.refpointsN = 6;
+    this.refpoints = [];
+    for (var i = 0, l = this.refpointsN; i < l; i++) {
+        this.refpoints.push([]);
+    }
+
+    this.refpointsPointsN = 6;
+    this.refpointsPoints = [];
+    for (var i = 0, l = this.refpointsPointsN; i < l; i++) {
+        this.refpointsPoints.push([]);
     }
 
     return this.context.getImageData(0, 0, this.image.width, this.image.height);
@@ -119,20 +125,22 @@ CanvasImage.prototype.transform = function() {
     var grid = new Int8Array(h*w);
     var pointsCounter = 0;
     var p, points = [], avgp = [w/2, h/2];
-    var refpoints = this.i > this.buffersN*2 ? 
-            this.points[this.pointsN - 2] : 
-            [
-                [1*w/6, h/2] ,
-                [3*w/6, h/2] ,
-                [5*w/6, h/2] ,
-            ], 
+
+    var refpoints = [],
         refpointsPoints = [],
         maxrefpoints = 5;
         maxrefpointsPoints = 0;
 
-    // initialize refpointsPoints when taking refpoints from previous frames
-    for (var j = 0, l = refpoints.length; j < l; j++) {
-        refpointsPoints[j] = [ { x: refpoints[j][0], y: refpoints[j][1] } ];
+    // take previous frames information when availbale
+    if (this.i > this.buffersN*2) {
+        refpoints = this.refpoints[this.refpointsN-1];
+        refpointsPoints = this.refpointsPoints[this.refpointsPointsN-1];
+        /*
+        // initialize refpointsPoints when taking refpoints from previous frames
+        for (var j = 0, l = refpoints.length; j < l; j++) {
+            refpointsPoints[j] = [ { x: refpoints[j][0], y: refpoints[j][1] } ];
+        }
+        */
     }
 
     // iterate through the main buffer and calculate the differences with previous
@@ -267,30 +275,22 @@ CanvasImage.prototype.transform = function() {
             markPoint(ctx, rp[0], rp[1], 3, 'yellow');
             markPoint(ctx, avgp[0], avgp[1], 6, color);
 
-            points.push(avgp);
-            //persistGoodPoints.push(goodPoints);
+            refpointsPoints[i] = goodPoints;
+            refpoints[i] = avgp;
         }
     }
 
     // store the current matched points and shift the array
-    for (var i = 0, l = this.pointsN-1; i < l; i++) {
-        this.points[i] = this.points[i+1];
+    for (var i = 0, l = this.refpointsN-1; i < l; i++) {
+        this.refpoints[i] = this.refpoints[i+1];
     }
-    this.points[i-1] = points;
+    this.refpoints[i-1] = refpoints;
 
-    /*
-    // store the current average point and shift the array
-    var cx = 0, cy = 0;
-    for (var i = 0, l = this.avgpN-1; i < l; i++) {
-        this.avgp[i] = this.avgp[i+1];
-        cx += this.avgp[i][0]/l;
-        cy += this.avgp[i][1]/l;
+    // store the current matched points and shift the array
+    for (var i = 0, l = this.refpointsPointsN-1; i < l; i++) {
+        this.refpointsPoints[i] = this.refpointsPoints[i+1];
     }
-    this.avgp[i-1] = avgp;
-
-    // paint the average point
-    markPoint(ctx, cx, cy, 10, 'yellow');
-    */
+    this.refpointsPoints[i-1] = refpointsPoints;
 
 };
 
