@@ -71,13 +71,13 @@ CanvasImage.prototype.getData = function() {
         this.avgp.push([0, 0]);
     }
 
-    this.refpointsN = 6;
+    this.refpointsN = 10;
     this.refpoints = [];
     for (var i = 0, l = this.refpointsN; i < l; i++) {
         this.refpoints.push([]);
     }
 
-    this.refpointsPointsN = 6;
+    this.refpointsPointsN = 10;
     this.refpointsPoints = [];
     for (var i = 0, l = this.refpointsPointsN; i < l; i++) {
         this.refpointsPoints.push([]);
@@ -129,18 +129,11 @@ CanvasImage.prototype.transform = function() {
     var refpoints = [],
         refpointsPoints = [],
         maxrefpoints = 5;
-        maxrefpointsPoints = 0;
 
     // take previous frames information when availbale
     if (this.i > this.buffersN*2) {
         refpoints = this.refpoints[this.refpointsN-1];
         refpointsPoints = this.refpointsPoints[this.refpointsPointsN-1];
-        /*
-        // initialize refpointsPoints when taking refpoints from previous frames
-        for (var j = 0, l = refpoints.length; j < l; j++) {
-            refpointsPoints[j] = [ { x: refpoints[j][0], y: refpoints[j][1] } ];
-        }
-        */
     }
 
     // iterate through the main buffer and calculate the differences with previous
@@ -157,7 +150,7 @@ CanvasImage.prototype.transform = function() {
         // check if the point belongs to the grid and also if it has changed
         x = (i/4) % w;
         y = parseInt((i/4) / w);
-        if ((!(x % omega) && !(y % omega)) && alpha > beta) {
+        if (this.i > 10 && (!(x % omega) && !(y % omega)) && alpha > beta) {
             newpx[i+0] = oldpx[i+0];
             newpx[i+1] = oldpx[i+1];
             newpx[i+2] = oldpx[i+2];
@@ -165,13 +158,10 @@ CanvasImage.prototype.transform = function() {
 
             var added = false;
             for (var j = 0, l = refpoints.length; j < l; j++) {
-                if (distance2([x, y], refpoints[j], 0) < 60) { // greek const
+                if (distance2([x, y], refpoints[j], 0) < 90) { // greek const
                     grid[i/4] = j;
                     refpointsPoints[j].push({ x: x, y: y });
                     added = true;
-                    if (refpointsPoints.length > maxrefpointsPoints) {
-                        maxrefpointsPoints = refpointsPoints.length;
-                    }
                     break;
                 }
             }
@@ -223,7 +213,7 @@ CanvasImage.prototype.transform = function() {
         if (indices && indices.length > 0 && indices.length > 3) {
 
             var rp = [rpoints[indices[0]].x, rpoints[indices[0]].y];
-            var p, po, j, b1, b2, goodPoints = [], gpl = 0, avgp = [0, 0], center = [w/2, h/2], avgc = [0, 0, 0];
+            var p, po, j, b1, b2, goodPoints = [], gpl = 0, avgp = [0, 0], center = [w/2, h/2];
 
             b1 = this.buffers[this.buffersN-1].data;
             b2 = this.buffers[this.buffersN-2].data;
@@ -236,10 +226,11 @@ CanvasImage.prototype.transform = function() {
             for (var i2 = 1, l2 = indices.length; i2 < l2; i2++) {
                 p = [rpoints[indices[i2]].x, rpoints[indices[i2]].y];
                 j = (p[1]*w+p[0])*4;
+                //ctx.lineTo(p[0], p[1]);
 
                 if (
-                    distance2(p, po, 0) < 40 // space distance 
-                    && distance3(b1, b2, j) < 40 // color distance
+                    distance2(p, po, 0) < 60 // space distance 
+                    && distance3(b1, b2, j) < 90 // color distance
                 ) {
                     goodPoints.push(p);
                 }
@@ -249,34 +240,45 @@ CanvasImage.prototype.transform = function() {
             for (var i2 = 0, l2 = goodPoints.length; i2 < l2; i2++) {
                 p = goodPoints[i2];
                 j = (p[1]*w+p[0])*4;
-                ctx.lineTo(p[0], p[1]);
 
                 avgp[0] += p[0]/l2;
                 avgp[1] += p[1]/l2;
-
-                avgc[0] += b1[j+0]/l2;
-                avgc[1] += b1[j+1]/l2;
-                avgc[2] += b1[j+2]/l2;
             }
 
             ctx.closePath();
 
-            //var background = 'rgba(' + parseInt(avgc[0]) + ',' + parseInt(avgc[1]) + ',' + parseInt(avgc[2]) + ', 0.3)';
-            //var color = 'rgba(' + parseInt(avgc[0]) + ',' + parseInt(avgc[1]) + ',' + parseInt(avgc[2]) + ', 1)';
-            var background = 'rgba(0, 255, 0, 0.2)';
-            var color = 'rgba(0, 255, 0, 1)';
+            if (goodPoints.length) {
 
-            ctx.fillStyle = background;
-            ctx.strokeStyle = "rgba(100, 100, 100, 0)";
-            ctx.fill();
-            ctx.stroke();
+                var background = 'rgba(0, 255, 0, 0.2)';
+                var color = 'rgba(0, 255, 0, 0.6)';
+                if (1===i) color = 'rgba(255, 255, 0, 0.6)';
+                if (2===i) color = 'rgba(0, 255, 255, 0.6)';
+                if (3===i) color = 'rgba(255, 0, 0, 0.6)';
+                if (4===i) color = 'rgba(0, 0, 255, 0.6)';
+                if (5===i) color = 'rgba(255, 255, 255, 0.6)';
 
+                ctx.fillStyle = background;
+                ctx.strokeStyle = "rgba(100, 100, 100, 0)";
+                ctx.fill();
+                ctx.stroke();
 
-            markPoint(ctx, rp[0], rp[1], 3, 'yellow');
-            markPoint(ctx, avgp[0], avgp[1], 6, color);
+                var finalAvgp = [avgp[0], avgp[1]], j = 1;
+                for (var i2 = 0, l2 = this.refpointsN; i2 < l; i2++) {
+                    if (this.refpoints[i2][i] && distance2(this.refpoints[i2][i], avgp, 0) < 90) {
+                        finalAvgp[0] += this.refpoints[i2][i][0];
+                        finalAvgp[1] += this.refpoints[i2][i][1];
+                        j++;
+                    }
+                }
+                finalAvgp[0] /= j;
+                finalAvgp[1] /= j;
 
-            refpointsPoints[i] = goodPoints;
-            refpoints[i] = avgp;
+                //markPoint(ctx, rp[0], rp[1], 3, 'yellow');
+                markPoint(ctx, finalAvgp[0], finalAvgp[1], 10, color);
+
+                refpointsPoints[i] = goodPoints;
+                refpoints[i] = avgp;
+            }
         }
     }
 
