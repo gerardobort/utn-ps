@@ -258,22 +258,6 @@ Filter.sobel3 = function (imageData) {
           // and mix in some blue for aesthetics
           data[i+2] = 255 - (v+h)/4;
           data[i+3] = Math.abs((v+h)/4); // semi-opaque alpha
-
-          var t=60;
-          if (
-                //verticalTop.data[i] > t
-                //&& verticalBottom.data[i] > t
-                 tl.data[i] > t
-                && tr.data[i] > t
-                && bl.data[i] > t
-                && br.data[i] > t
-            ) {
-                data[i  ] = 255;
-                data[i+1] = 0;
-                data[i+2] = 0;
-                data[i+3] = 255;
-          }
-            
     }
 
     return imageData;
