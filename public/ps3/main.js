@@ -86,16 +86,20 @@ CanvasImage.prototype.transform = function() {
     this.buffers[4].data.set(this.original.data);
     this.i++;
 
-
     var bs = this.buffers,
         bs0 = bs[0].data,
         bs1 = bs[1].data,
         bs2 = bs[2].data,
         bs3 = bs[3].data,
         epsilon = 40,
-        alpha =0;
+        alpha = 0,
+        i = x = y = 0, w = olddata.width, h = olddata.height;
 
-    for (var i = 0; i < len; i += 4) {
+
+    var cuadricula = new Int8Array(h*w);
+
+
+    for (i = 0; i < len; i += 4) {
         newpx[i+0] = 0;
         newpx[i+1] = 255;
         newpx[i+2] = 0;
@@ -113,8 +117,53 @@ CanvasImage.prototype.transform = function() {
         if (distance3(bs0, oldpx, i) < epsilon) {
             alpha -= 20;
         }
-        newpx[i+3] = alpha;
+        newpx[i+3] = 0;
+
+        x = (i/4) % w;
+        y = parseInt((i/4) / w);
+        if ((!(x % 5) && !(y % 5)) && alpha > 255-epsilon) {
+            newpx[i+0] = 255;
+            newpx[i+1] = 0;
+            newpx[i+2] = 0;
+            newpx[i+3] = 0;
+            cuadricula[y*w +x] = 1;
+        }
     }
+
+    var minx = HV = 99999999,
+        maxx = LV = -1;
+    for (y = 0; y < h; y++) {
+        minx = HV;
+        maxx = LV;
+        for (x = 0; x < w; x++) {
+            i = y*w + x; j = i*4;
+            if (cuadricula[i]) {
+                if (x < minx) minx = x;
+                if (x > maxx) maxx = x;
+            }
+        }
+        if (minx !== HV) {
+            i = y*w + minx; j = i*4;
+            newpx[j+0] = 0;
+            newpx[j+1] = 0;
+            newpx[j+2] = 255;
+            newpx[j+3] = 255;
+        }
+
+        if (maxx !== LV) {
+            i = y*w + maxx, j = i*4;
+            newpx[j+0] = 0;
+            newpx[j+1] = 0;
+            newpx[j+2] = 255;
+            newpx[j+3] = 255;
+        }
+    }
+
+if (false&&this.i > 10) {
+    console.log(cuadricula);
+    throw "asdf";
+}
+
     this.setData(newdata);
 };
 
