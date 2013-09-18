@@ -52,6 +52,7 @@ function CanvasImage(canvas, src) {
 
     this.i = 0;
     this.pointsCounter = 0;
+    this.hull = new ConvexHull();
 }
 
 CanvasImage.prototype.getData = function() {
@@ -61,6 +62,11 @@ CanvasImage.prototype.getData = function() {
     this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
     this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
     this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
+    this.avgp0 = [0, 0];
+    this.avgp1 = [0, 0];
+    this.avgp2 = [0, 0];
+    this.avgp3 = [0, 0];
+    this.avgp4 = [0, 0];
     return this.context.getImageData(0, 0, this.image.width, this.image.height);
 };
 
@@ -144,7 +150,7 @@ CanvasImage.prototype.transform = function() {
         var minx = HV = 99999999,
             maxx = LV = -1;
 
-        var minsx = [], maxsx = [], p, points = [];
+        var minsx = [], maxsx = [], p, points = [], avgp = [0, 0];
         for (y = 0; y < h; y++) {
             minx = HV;
             maxx = LV;
@@ -163,7 +169,7 @@ CanvasImage.prototype.transform = function() {
                 newpx[j+3] = 255;
                 minsx.push([minx, y]);
                 points.push({ x: minx, y: y });
-                markPoint(ctx, minx, y, 'red');
+                markPoint(ctx, minx, y, 1, 'red');
             }
 
             if (maxx !== LV) {
@@ -174,49 +180,42 @@ CanvasImage.prototype.transform = function() {
                 newpx[j+3] = 255;
                 maxsx.push([maxx, y]);
                 points.push({ x: maxx, y: y });
-                markPoint(ctx, maxx, y, 'blue');
+                markPoint(ctx, maxx, y, 1, 'blue');
             }
         }
 
-        var hull = new ConvexHull();
-        hull.compute(points);
-        var indices = hull.getIndices();
-        if (indices && indices.length>0) {
+        this.hull.clear();
+        this.hull.compute(points);
+        var indices = this.hull.getIndices();
+        if (indices && indices.length > 0) {
             ctx.beginPath();
             ctx.moveTo(points[indices[0]].x,points[indices[0]].y);
-            for (var i=1; i<indices.length; i++) {
+            for (var i=1, l=indices.length; i < l; i++) {
                 ctx.lineTo(points[indices[i]].x,points[indices[i]].y);
+                ctx.lineTo(points[indices[i]].x,points[indices[i]].y);
+                avgp[0] += points[indices[i]].x/l;
+                avgp[1] += points[indices[i]].y/l;
             }
             ctx.closePath();
-            ctx.fillStyle = "rgba(200, 2000, 2000, 0.2)";
-            ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+            ctx.fillStyle = "rgba(0, 255, 0, 0.1)";
+            ctx.strokeStyle = "rgba(0, 255, 0, 1)";
             ctx.fill();
             ctx.stroke();
         }
 
-
-        /*
-        ctx.beginPath();
-        ctx.moveTo(minsx[0][0], minsx[0][1]);
-        for (var i=0, l=minsx.length; i < l; i++) {
-            p = minsx[i];
-            ctx.lineTo(p[0], p[1]);
-        }
-        for (var i=0, l=maxsx.length; i < l; i++) {
-            p = maxsx[i];
-            ctx.lineTo(p[0], p[1]);
-        }
-        ctx.closePath();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'blue';
-        ctx.stroke();
-        */
+        this.avgp0 = this.avgp1;
+        this.avgp1 = this.avgp2;
+        this.avgp2 = this.avgp3;
+        this.avgp3 = this.avgp4;
+        this.avgp4 = avgp;
+        var cx = (this.avgp4[0] + this.avgp3[0] + this.avgp2[0] + this.avgp1[0] + this.avgp0[0]) / 5;
+        var cy = (this.avgp4[1] + this.avgp3[1] + this.avgp2[1] + this.avgp1[1] + this.avgp0[1]) / 5;
+        markPoint(ctx, cx, cy, 10, 'yellow');
     }
 
 };
 
-var markPoint = function (context, x, y, color) {
-    var radius = 1;
+var markPoint = function (context, x, y, radius, color) {
     context.beginPath();
     context.arc(x, y, radius, 0, 2 * Math.PI, false);
     context.fillStyle = color;
@@ -227,8 +226,8 @@ var markPoint = function (context, x, y, color) {
 };
 
 var transformadores = [
-    new CanvasImage($('canvas1'), 'color-bars.png'),
-    new CanvasImage($('canvas2'), 'color-bars.png'),
+    new CanvasImage($('canvas1'), 'color-bars-medium.jpg'),
+    new CanvasImage($('canvas2'), 'color-bars-medium.jpg'),
 ];
 
 
