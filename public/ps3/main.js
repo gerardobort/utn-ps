@@ -51,6 +51,7 @@ function CanvasImage(canvas, src) {
     this.image = i;
 
     this.i = 0;
+    this.pointsCounter = 0;
 }
 
 CanvasImage.prototype.getData = function() {
@@ -97,7 +98,7 @@ CanvasImage.prototype.transform = function() {
 
 
     var cuadricula = new Int8Array(h*w);
-
+    var pointsCounter = 0;
 
     for (i = 0; i < len; i += 4) {
         newpx[i+0] = 0;
@@ -127,39 +128,43 @@ CanvasImage.prototype.transform = function() {
             newpx[i+2] = 0;
             newpx[i+3] = 0;
             cuadricula[y*w +x] = 1;
+            pointsCounter++;
         }
     }
 
-    this.setData(newdata);
+    if ((pointsCounter >= epsilon*0.5) && this.i > 2) {
+        this.pointsCounter = pointsCounter;
+        this.setData(newdata);
 
-    var minx = HV = 99999999,
-        maxx = LV = -1;
-    for (y = 0; y < h; y++) {
-        minx = HV;
-        maxx = LV;
-        for (x = 0; x < w; x++) {
-            i = y*w + x; j = i*4;
-            if (cuadricula[i]) {
-                if (x < minx) minx = x;
-                if (x > maxx) maxx = x;
+        var minx = HV = 99999999,
+            maxx = LV = -1;
+        for (y = 0; y < h; y++) {
+            minx = HV;
+            maxx = LV;
+            for (x = 0; x < w; x++) {
+                i = y*w + x; j = i*4;
+                if (cuadricula[i]) {
+                    if (x < minx) minx = x;
+                    if (x > maxx) maxx = x;
+                }
             }
-        }
-        if (minx !== HV) {
-            i = y*w + minx; j = i*4;
-            newpx[j+0] = 0;
-            newpx[j+1] = 0;
-            newpx[j+2] = 255;
-            newpx[j+3] = 255;
-            markPoint(this.context, minx, y);
-        }
+            if (minx !== HV) {
+                i = y*w + minx; j = i*4;
+                newpx[j+0] = 0;
+                newpx[j+1] = 0;
+                newpx[j+2] = 255;
+                newpx[j+3] = 255;
+                markPoint(this.context, minx, y);
+            }
 
-        if (maxx !== LV) {
-            i = y*w + maxx, j = i*4;
-            newpx[j+0] = 0;
-            newpx[j+1] = 0;
-            newpx[j+2] = 255;
-            newpx[j+3] = 255;
-            markPoint(this.context, maxx, y);
+            if (maxx !== LV) {
+                i = y*w + maxx, j = i*4;
+                newpx[j+0] = 0;
+                newpx[j+1] = 0;
+                newpx[j+2] = 255;
+                newpx[j+3] = 255;
+                markPoint(this.context, maxx, y);
+            }
         }
     }
 
