@@ -68,6 +68,9 @@ CanvasImage.prototype.setData = function(data) {
     return this.context.putImageData(data, 0, 0);
 };
 
+var distance2 = function (v1, v2, i) {
+    return Math.sqrt(Math.pow(v1[i+0] - v2[i+0], 2) + Math.pow(v1[i+1] - v2[i+1], 2));
+};
 var distance3 = function (v1, v2, i) {
     return Math.sqrt(Math.pow(v1[i+0] - v2[i+0], 2) + Math.pow(v1[i+1] - v2[i+1], 2) + Math.pow(v1[i+2] - v2[i+2], 2));
 };
@@ -93,6 +96,7 @@ CanvasImage.prototype.transform = function() {
         bs2 = bs[2].data,
         bs3 = bs[3].data,
         epsilon = 40,
+        gamma = 3,
         alpha = 0,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
@@ -132,12 +136,15 @@ CanvasImage.prototype.transform = function() {
         }
     }
 
-    if ((pointsCounter >= epsilon*0.5) && this.i > 2) {
+    if ((pointsCounter >= gamma) && this.i > 2) {
         this.pointsCounter = pointsCounter;
         this.setData(newdata);
 
+        var ctx = this.context;
         var minx = HV = 99999999,
             maxx = LV = -1;
+
+        var minsx = [], maxsx = [], p, points = [];
         for (y = 0; y < h; y++) {
             minx = HV;
             maxx = LV;
@@ -154,7 +161,9 @@ CanvasImage.prototype.transform = function() {
                 newpx[j+1] = 0;
                 newpx[j+2] = 255;
                 newpx[j+3] = 255;
-                markPoint(this.context, minx, y);
+                minsx.push([minx, y]);
+                points.push({ x: minx, y: y });
+                markPoint(ctx, minx, y, 'red');
             }
 
             if (maxx !== LV) {
@@ -163,21 +172,57 @@ CanvasImage.prototype.transform = function() {
                 newpx[j+1] = 0;
                 newpx[j+2] = 255;
                 newpx[j+3] = 255;
-                markPoint(this.context, maxx, y);
+                maxsx.push([maxx, y]);
+                points.push({ x: maxx, y: y });
+                markPoint(ctx, maxx, y, 'blue');
             }
         }
+
+        var hull = new ConvexHull();
+        hull.compute(points);
+        var indices = hull.getIndices();
+        if (indices && indices.length>0) {
+            ctx.beginPath();
+            ctx.moveTo(points[indices[0]].x,points[indices[0]].y);
+            for (var i=1; i<indices.length; i++) {
+                ctx.lineTo(points[indices[i]].x,points[indices[i]].y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = "rgba(200, 2000, 2000, 0.2)";
+            ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+            ctx.fill();
+            ctx.stroke();
+        }
+
+
+        /*
+        ctx.beginPath();
+        ctx.moveTo(minsx[0][0], minsx[0][1]);
+        for (var i=0, l=minsx.length; i < l; i++) {
+            p = minsx[i];
+            ctx.lineTo(p[0], p[1]);
+        }
+        for (var i=0, l=maxsx.length; i < l; i++) {
+            p = maxsx[i];
+            ctx.lineTo(p[0], p[1]);
+        }
+        ctx.closePath();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'blue';
+        ctx.stroke();
+        */
     }
 
 };
 
-var markPoint = function (context, x, y) {
+var markPoint = function (context, x, y, color) {
     var radius = 1;
     context.beginPath();
     context.arc(x, y, radius, 0, 2 * Math.PI, false);
-    context.fillStyle = '#fff';
+    context.fillStyle = color;
     context.fill();
     context.lineWidth = 0;
-    context.strokeStyle = '#fff';
+    context.strokeStyle = color;
     context.stroke();
 };
 
