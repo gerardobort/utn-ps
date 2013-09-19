@@ -56,24 +56,27 @@ function CanvasImage(canvas, src) {
 }
 
 CanvasImage.prototype.getData = function() {
+
+    // initialize variables
+
+    this.buffersN = 4;
     this.buffers = [];
+    for (var i = 0, l = this.buffersN; i < l; i++) {
+        this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
+    }
 
-    this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
-    this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
-    this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
-    this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
-    this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
+    this.avgpN = 6;
+    this.avgp = [];
+    for (var i = 0, l = this.avgpN; i < l; i++) {
+        this.avgp.push([0, 0]);
+    }
 
-    this.avgp0 = [0, 0];
-    this.avgp1 = [0, 0];
-    this.avgp2 = [0, 0];
-    this.avgp3 = [0, 0];
-    this.avgp4 = [0, 0];
-
+    this.pointsN = 6;
     this.points = [];
-    for (i = 0; i < 10; i++) {
+    for (var i = 0, l = this.pointsN; i < l; i++) {
         this.points.push([]);
     }
+
     return this.context.getImageData(0, 0, this.image.width, this.image.height);
 };
 
@@ -89,70 +92,66 @@ var distance3 = function (v1, v2, i) {
 };
 
 CanvasImage.prototype.transform = function() {
-    var olddata = this.original;
-    var oldpx = olddata.data;
-    var newdata = this.context.createImageData(olddata);
-    var newpx = newdata.data
-    var len = newpx.length;
 
-    this.buffers[0] = this.buffers[1];
-    this.buffers[1] = this.buffers[2];
-    this.buffers[2] = this.buffers[3];
-    this.buffers[3] = this.buffers[4];
-    this.buffers[4] = this.context.createImageData(this.original.width, this.original.height);
-    this.buffers[4].data.set(this.original.data);
+    // shift buffers and store the last one
+    for (var i = 0, l = this.buffersN-1; i < l; i++) {
+        this.buffers[i] = this.buffers[i+1];
+    }
+    this.buffers[i-1] = this.context.createImageData(this.original.width, this.original.height);
+    this.buffers[i-1].data.set(this.original.data);
+
     this.i++;
 
-    var bs = this.buffers,
-        bs0 = bs[0].data,
-        bs1 = bs[1].data,
-        bs2 = bs[2].data,
-        bs3 = bs[3].data,
-        epsilon = 60,
+    var olddata = this.original,
+        oldpx = olddata.data,
+        newdata = this.context.createImageData(olddata),
+        newpx = newdata.data,
+        len = newpx.length;
+
+    var epsilon = 60,
+        alpha = 0,
+        beta = 150,
         gamma = 3,
         omega = 5,
-        alpha = 0,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
 
-    var cuadricula = new Int8Array(h*w);
+    var grid = new Int8Array(h*w);
     var pointsCounter = 0;
 
+    // iterate through the main buffer and calculate the differences with previous
     for (i = 0; i < len; i += 4) {
         newpx[i+0] = 0;
         newpx[i+1] = 255;
         newpx[i+2] = 0;
 
+        // change the alpha channel based on the frame differences
         alpha = 255;
-        if (distance3(bs3, oldpx, i) < epsilon) {
-            alpha -= 150;
+        for (var j = 0, l = this.buffersN-1; j < l; j++) {
+            if (distance3(this.buffers[j].data, oldpx, i) < epsilon) {
+                alpha -= 255/l;
+            }
         }
-        if (distance3(bs2, oldpx, i) < epsilon) {
-            alpha -= 50;
-        }
-        if (distance3(bs1, oldpx, i) < epsilon) {
-            alpha -= 35;
-        }
-        if (distance3(bs0, oldpx, i) < epsilon) {
-            alpha -= 20;
-        }
-        newpx[i+3] = alpha*0.2;
+        newpx[i+3] = parseInt(alpha*0.2);
 
+        // check if the point belongs to the grid and also if it has changed
         x = (i/4) % w;
         y = parseInt((i/4) / w);
-        if ((!(x % omega) && !(y % omega)) && alpha > 255-epsilon) {
+        if ((!(x % omega) && !(y % omega)) && alpha > beta) {
             newpx[i+0] = 255;
             newpx[i+1] = 0;
             newpx[i+2] = 0;
             newpx[i+3] = 0;
-            cuadricula[y*w +x] = 1;
+            grid[y*w +x] = 1;
             pointsCounter++;
         }
     }
 
+    // store the count number of matched points
     this.pointsCounter = pointsCounter;
     this.setData(newdata);
 
+    // calculate and generate point groups based on density 
     var ctx = this.context;
     var minx = HV = 99999999,
         maxx = LV = -1;
@@ -165,7 +164,7 @@ CanvasImage.prototype.transform = function() {
             maxx = LV;
             for (x = 0; x < w; x++) {
                 i = y*w + x; j = i*4;
-                if (cuadricula[i]) {
+                if (grid[i]) {
                     if (x < minx) minx = x;
                     if (x > maxx) maxx = x;
                 }
@@ -195,12 +194,13 @@ CanvasImage.prototype.transform = function() {
 
     }
 
-
+    // concatenate the current points with the ones of previous frames 
     var allpoints = [];
-    for (i = 0; i < 5-1; i++) {
+    for (var i = 0, l = this.pointsN-1; i < l; i++) {
         allpoints = allpoints.concat(this.points[i]);
     }
 
+    // based on the sumatory of points, calculate the convex hull and paint it
     this.hull.clear();
     this.hull.compute(allpoints);
     var indices = this.hull.getIndices();
@@ -232,18 +232,22 @@ CanvasImage.prototype.transform = function() {
         markPoint(ctx, farp[0], farp[1], 3, 'white');
     }
 
-    for (i = 0; i < 5-1; i++) {
+    // store the current matched points and shift the array
+    for (var i = 0, l = this.pointsN-1; i < l; i++) {
         this.points[i] = this.points[i+1];
     }
     this.points[i-1] = points;
 
-    this.avgp0 = this.avgp1;
-    this.avgp1 = this.avgp2;
-    this.avgp2 = this.avgp3;
-    this.avgp3 = this.avgp4;
-    this.avgp4 = avgp;
-    var cx = (this.avgp4[0] + this.avgp3[0] + this.avgp2[0] + this.avgp1[0] + this.avgp0[0]) / 5;
-    var cy = (this.avgp4[1] + this.avgp3[1] + this.avgp2[1] + this.avgp1[1] + this.avgp0[1]) / 5;
+    // store the current average point and shift the array
+    var cx = 0, cy = 0;
+    for (var i = 0, l = this.avgpN-1; i < l; i++) {
+        this.avgp[i] = this.avgp[i+1];
+        cx += this.avgp[i][0]/l;
+        cy += this.avgp[i][1]/l;
+    }
+    this.avgp[i-1] = avgp;
+
+    // paint the average point
     markPoint(ctx, cx, cy, 10, 'yellow');
 
 };
