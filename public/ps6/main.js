@@ -110,7 +110,7 @@ CanvasImage.prototype.transform = function() {
 
     var epsilon = 60,
         alpha = 0,
-        beta = 150,
+        beta = 160,
         gamma = 3,
         omega = 5,
         i = x = y = 0, w = olddata.width, h = olddata.height;
@@ -118,6 +118,15 @@ CanvasImage.prototype.transform = function() {
 
     var grid = new Int8Array(h*w);
     var pointsCounter = 0;
+    var p, points = [], avgp = [w/2, h/2];
+    var refpoints = this.i > this.buffersN*2 ? this.points[this.pointsN - 2] : [], 
+        refpointsPoints = [],
+        maxrefpoints = 3;
+
+    // initialize refpointsPoints when taking refpoints from previous frames
+    for (var j = 0, l = refpoints.length; j < l; j++) {
+        refpointsPoints[j] = [ { x: refpoints[j][0], y: refpoints[j][1] } ];
+    }
 
     // iterate through the main buffer and calculate the differences with previous
     for (i = 0; i < len; i += 4) {
@@ -141,58 +150,35 @@ CanvasImage.prototype.transform = function() {
             newpx[i+0] = 255;
             newpx[i+1] = 0;
             newpx[i+2] = 0;
-            newpx[i+3] = 0;
-            grid[y*w +x] = 1;
-            pointsCounter++;
+            newpx[i+3] = 255;
+
+            var added = false;
+            for (var j = 0, l = refpoints.length; j < l; j++) {
+                if (distance2([x, y], refpoints[j], 0) < 80) { // greek const
+                    grid[i/4] = j;
+                    refpointsPoints[j].push({ x: x, y: y });
+                    added = true;
+                }
+            }
+            if (!added) {
+                if (j === maxrefpoints) break;
+                refpoints.push([x, y]);
+                refpointsPoints.push([ {x: x, y: y } ]);
+            }
         }
     }
 
-    // store the count number of matched points
-    this.pointsCounter = pointsCounter;
     this.setData(newdata);
 
     // calculate and generate point groups based on density 
     var ctx = this.context;
-    var minx = HV = 99999999,
-        maxx = LV = -1;
 
-    var minsx = [], maxsx = [], p, points = [], avgp = [w/2, h/2];
-
-    if ((pointsCounter >= gamma) && this.i > 2) {
-        for (y = 0; y < h; y++) {
-            minx = HV;
-            maxx = LV;
-            for (x = 0; x < w; x++) {
-                i = y*w + x; j = i*4;
-                if (grid[i]) {
-                    if (x < minx) minx = x;
-                    if (x > maxx) maxx = x;
-                }
-            }
-            if (minx !== HV) {
-                i = y*w + minx; j = i*4;
-                newpx[j+0] = 0;
-                newpx[j+1] = 0;
-                newpx[j+2] = 255;
-                newpx[j+3] = 255;
-                minsx.push([minx, y]);
-                points.push({ x: minx, y: y });
-                //markPoint(ctx, minx, y, 1, 'red');
-            }
-
-            if (maxx !== LV) {
-                i = y*w + maxx, j = i*4;
-                newpx[j+0] = 0;
-                newpx[j+1] = 0;
-                newpx[j+2] = 255;
-                newpx[j+3] = 255;
-                maxsx.push([maxx, y]);
-                points.push({ x: maxx, y: y });
-                //markPoint(ctx, maxx, y, 1, 'blue');
-            }
-        }
-
+    for (var j = 0, l = refpoints.length; j < l; j++) {
+        markPoint(ctx, refpoints[j][0], refpoints[j][1], 5, 'red');
     }
+
+    // store the count number of matched points
+    this.pointsCounter = pointsCounter;
 
     // concatenate the current points with the ones of previous frames 
     var allpoints = [];
@@ -201,35 +187,35 @@ CanvasImage.prototype.transform = function() {
     }
 
     // based on the sumatory of points, calculate the convex hull and paint it
-    this.hull.clear();
-    this.hull.compute(allpoints);
-    var indices = this.hull.getIndices();
-    if (indices && indices.length > 0) {
-        ctx.beginPath();
-        ctx.moveTo(allpoints[indices[0]].x, allpoints[indices[0]].y);
-        var p = farp = center = [w/2, h/2], d = fard = 0, farweight = parseInt(pointsCounter/2);
-        for (i = 1, l = indices.length; i < l; i++) {
-            p = [allpoints[indices[i]].x, allpoints[indices[i]].y];
-            ctx.lineTo(p[0], p[1]);
-            avgp[0] += (p[0] -w/2)/(l+farweight);
-            avgp[1] += (p[1] -h/2)/(l+farweight);
-            if ((d = distance2(center, p, 0)) > fard) {
-                fard = d;
-                farp = p;
+    for (var i = 0, l = refpointsPoints.length; i < l; i++) {
+        var rpoints = refpointsPoints[i]||[];
+        if (rpoints.length <= 4) continue; // if it's a small group, then skip it
+        this.hull.clear();
+        this.hull.compute(rpoints);
+        var indices = this.hull.getIndices();
+        if (indices && indices.length > 0) {
+            ctx.beginPath();
+            ctx.moveTo(rpoints[indices[0]].x, rpoints[indices[0]].y);
+            var p = avgp = center = [w/2, h/2];
+            for (var i2 = 1, l2 = indices.length; i2 < l2; i2++) {
+                p = [rpoints[indices[i2]].x, rpoints[indices[i2]].y];
+                ctx.lineTo(p[0], p[1]);
+                avgp[0] += (p[0] - center[0])/l;
+                avgp[1] += (p[1] - center[1])/l;
             }
-        }
-        for (i = 0; i < farweight; i++) {
-            avgp[0] += (farp[0] -w/2)/(l+farweight);
-            avgp[1] += (farp[1] -h/2)/(l+farweight);
-        }
-        
-        ctx.closePath();
-        ctx.fillStyle = "rgba(0, 100, 0, 0.2)";
-        ctx.strokeStyle = "rgba(100, 100, 100, 0.7)";
-        ctx.fill();
-        ctx.stroke();
+            ctx.closePath();
+            ctx.fillStyle = "rgba(0, 100, 0, 0.2)";
+            if (1 === i) { ctx.fillStyle = "rgba(100, 0, 0, 0.2)"; }
+            if (2 === i) { ctx.fillStyle = "rgba(0, 0, 100, 0.2)"; }
+            if (3 === i) { ctx.fillStyle = "rgba(100, 100, 0, 0.2)"; }
+            if (4 === i) { ctx.fillStyle = "rgba(0, 100, 100, 0.2)"; }
 
-        markPoint(ctx, farp[0], farp[1], 3, 'white');
+            ctx.strokeStyle = "rgba(100, 100, 100, 0.7)";
+            ctx.fill();
+            ctx.stroke();
+            markPoint(ctx, avgp[0], avgp[1], 10, 'rgba(200,200,0,0.4)');
+            points.push(avgp);
+        }
     }
 
     // store the current matched points and shift the array
@@ -238,6 +224,7 @@ CanvasImage.prototype.transform = function() {
     }
     this.points[i-1] = points;
 
+    /*
     // store the current average point and shift the array
     var cx = 0, cy = 0;
     for (var i = 0, l = this.avgpN-1; i < l; i++) {
@@ -249,6 +236,7 @@ CanvasImage.prototype.transform = function() {
 
     // paint the average point
     markPoint(ctx, cx, cy, 10, 'yellow');
+    */
 
 };
 
