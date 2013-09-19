@@ -119,7 +119,13 @@ CanvasImage.prototype.transform = function() {
     var grid = new Int8Array(h*w);
     var pointsCounter = 0;
     var p, points = [], avgp = [w/2, h/2];
-    var refpoints = this.i > this.buffersN*2 ? this.points[this.pointsN - 2] : [], 
+    var refpoints = this.i > this.buffersN*2 ? 
+            this.points[this.pointsN - 2] : 
+            [
+                [1*w/6, h/2] ,
+                [3*w/6, h/2] ,
+                [5*w/6, h/2] ,
+            ], 
         refpointsPoints = [],
         maxrefpoints = 3;
 
@@ -160,8 +166,7 @@ CanvasImage.prototype.transform = function() {
                     added = true;
                 }
             }
-            if (!added) {
-                if (j === maxrefpoints) break;
+            if (!added && refpoints.length < maxrefpoints) {
                 refpoints.push([x, y]);
                 refpointsPoints.push([ {x: x, y: y } ]);
             }
