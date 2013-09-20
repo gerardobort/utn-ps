@@ -209,60 +209,49 @@ CanvasImage.prototype.transform = function() {
         this.hull.compute(rpoints);
         var indices = this.hull.getIndices();
         if (indices && indices.length > 0 && indices.length > 3) {
-            ctx.beginPath();
-            ctx.moveTo(rpoints[indices[0]].x, rpoints[indices[0]].y);
+
+            var rp = [rpoints[indices[0]].x, rpoints[indices[0]].y];
             var p, j, b1, b2, avgp = [w/2, h/2], center = [w/2, h/2], avgc = [0, 0, 0];
 
             b1 = this.buffers[this.buffersN-1].data;
             b2 = this.buffers[this.buffersN-2].data;
 
+            ctx.beginPath();
+            ctx.moveTo(rp[0], rp[1]);
+
             // calculate avgp
             for (var i2 = 1, l2 = indices.length; i2 < l2; i2++) {
                 p = [rpoints[indices[i2]].x, rpoints[indices[i2]].y];
-                avgp[0] += (p[0] - center[0])/l;
-                avgp[1] += (p[1] - center[1])/l;
-
                 j = (y*w+x)*4;
 
-                avgc[0] += b1[j+0]/l2;
-                avgc[1] += b1[j+1]/l2;
-                avgc[2] += b1[j+2]/l2;
-
                 if (
-                    distance3(b1, b2, j) < 80
-                    && distance3(b1, b2, j) < 20
+                    //distance2(p, avgp, 0) < 100 // space distance 
+                    //&&
+                    distance3(b1, b2, j) < 20 // color distance
                 ) {
                     ctx.lineTo(p[0], p[1]);
+
+                    avgp[0] += (p[0] - center[0])/l2;
+                    avgp[1] += (p[1] - center[1])/l2;
+
+                    avgc[0] += b1[j+0]/l2;
+                    avgc[1] += b1[j+1]/l2;
+                    avgc[2] += b1[j+2]/l2;
                 }
             }
 
-            /*
-            // discard bad points
-            for (var i2 = 1, l2 = indices.length; i2 < l2; i2++) {
-                p = [rpoints[indices[i2]].x, rpoints[indices[i2]].y];
-                // if (distance2(p, avgp, 0) < 200) {;
-                if (distance3(newpx[i2], oldpx[i2], 0) < 100) {;
-                    ctx.lineTo(p[0], p[1]);
-                }
-            }
-            */
             ctx.closePath();
-            //var color = "rgba(0, 100, 0, 0.9)";
-            var color = 'rgba(' + parseInt(avgc[0]) + ',' + parseInt(avgc[1]) + ',' + parseInt(avgc[2]) + ', 0.3)';
 
-/*
-            if (1 === i) { color = "rgba(100, 0, 0, 0.9)"; }
-            if (2 === i) { color = "rgba(0, 0, 100, 0.9)"; }
-            if (3 === i) { color = "rgba(100, 100, 0, 0.9)"; }
-            if (4 === i) { color = "rgba(0, 100, 100, 0.9)"; }
-*/
-            ctx.fillStyle = color;
-            
+            var background = 'rgba(' + parseInt(avgc[0]) + ',' + parseInt(avgc[1]) + ',' + parseInt(avgc[2]) + ', 0.3)';
+            var color = 'rgba(' + parseInt(avgc[0]) + ',' + parseInt(avgc[1]) + ',' + parseInt(avgc[2]) + ', 1)';
 
-            ctx.strokeStyle = "rgba(100, 100, 100, 0.7)";
+            ctx.fillStyle = background;
+            ctx.strokeStyle = "rgba(100, 100, 100, 0)";
             ctx.fill();
             ctx.stroke();
-            markPoint(ctx, avgp[0], avgp[1], 10, color);
+
+            markPoint(ctx, avgp[0], avgp[1], 6, color);
+
             points.push(avgp);
         }
     }
