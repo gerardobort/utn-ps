@@ -108,11 +108,11 @@ CanvasImage.prototype.transform = function() {
         newpx = newdata.data,
         len = newpx.length;
 
-    var epsilon = 40,
+    var epsilon = 60,
         alpha = 0,
         beta = 160,
         gamma = 3,
-        omega = 5,
+        omega = 8,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
 
@@ -127,7 +127,7 @@ CanvasImage.prototype.transform = function() {
                 [5*w/6, h/2] ,
             ], 
         refpointsPoints = [],
-        maxrefpoints = 3;
+        maxrefpoints = 5;
         maxrefpointsPoints = 0;
 
     // initialize refpointsPoints when taking refpoints from previous frames
@@ -157,7 +157,7 @@ CanvasImage.prototype.transform = function() {
 
             var added = false;
             for (var j = 0, l = refpoints.length; j < l; j++) {
-                if (distance2([x, y], refpoints[j], 0) < 90) { // greek const
+                if (distance2([x, y], refpoints[j], 0) < 60) { // greek const
                     grid[i/4] = j;
                     refpointsPoints[j].push({ x: x, y: y });
                     added = true;
@@ -179,9 +179,11 @@ CanvasImage.prototype.transform = function() {
     // calculate and generate point groups based on density 
     var ctx = this.context;
 
+    /*
     for (var j = 0, l = refpoints.length; j < l; j++) {
         markPoint(ctx, refpoints[j][0], refpoints[j][1], 3, 'red');
     }
+    */
 
     // store the count number of matched points
     this.pointsCounter = pointsCounter;
@@ -242,8 +244,10 @@ CanvasImage.prototype.transform = function() {
 
             ctx.closePath();
 
-            var background = 'rgba(' + parseInt(avgc[0]) + ',' + parseInt(avgc[1]) + ',' + parseInt(avgc[2]) + ', 0.3)';
-            var color = 'rgba(' + parseInt(avgc[0]) + ',' + parseInt(avgc[1]) + ',' + parseInt(avgc[2]) + ', 1)';
+            //var background = 'rgba(' + parseInt(avgc[0]) + ',' + parseInt(avgc[1]) + ',' + parseInt(avgc[2]) + ', 0.3)';
+            //var color = 'rgba(' + parseInt(avgc[0]) + ',' + parseInt(avgc[1]) + ',' + parseInt(avgc[2]) + ', 1)';
+            var background = 'rgba(0, 255, 0, 0.2)';
+            var color = 'rgba(0, 255, 0, 1)';
 
             ctx.fillStyle = background;
             ctx.strokeStyle = "rgba(100, 100, 100, 0)";
