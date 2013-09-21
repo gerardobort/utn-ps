@@ -77,11 +77,28 @@ CanvasImage.prototype.getData = function() {
         this.refpoints.push([]);
     }
 
+    this.refpointsDataN = 10;
+    this.refpointsData = [];
+    for (var i = 0, l = this.refpointsDataN; i < l; i++) {
+        this.refpointsData.push([]);
+    }
+
     this.refpointsPointsN = 10;
     this.refpointsPoints = [];
     for (var i = 0, l = this.refpointsPointsN; i < l; i++) {
         this.refpointsPoints.push([]);
     }
+
+    this.pointColors = [
+        'rgba(0,     0,   0, 0.6)',
+        'rgba(0,     0, 255, 0.6)',
+        'rgba(0,   255,   0, 0.6)',
+        'rgba(0  , 255, 255, 0.6)',
+        'rgba(255,   0,   0, 0.6)',
+        'rgba(255,   0, 255, 0.6)',
+        'rgba(255, 255,   0, 0.6)',
+        'rgba(255, 255, 255, 0.6)'
+    ];
 
     return this.context.getImageData(0, 0, this.image.width, this.image.height);
 };
@@ -198,8 +215,9 @@ CanvasImage.prototype.transform = function() {
     // remove groups with not enough elements
     for (var i = 0, l = refpointsPoints.length; i < l; i++) {
         if (refpointsPoints[i].length < 4) {
-            refpoints.splice(i,1);
-            refpointsPoints.splice(i,1);
+            refpoints.splice(i, 1);
+            this.refpointsData.splice(i, 1);
+            refpointsPoints.splice(i, 1);
             i--; l--;
         }
     }
@@ -250,12 +268,10 @@ CanvasImage.prototype.transform = function() {
             if (goodPoints.length) {
 
                 var background = 'rgba(0, 255, 0, 0.2)';
-                var color = 'rgba(0, 255, 0, 0.6)';
-                if (1===i) color = 'rgba(255, 255, 0, 0.6)';
-                if (2===i) color = 'rgba(0, 255, 255, 0.6)';
-                if (3===i) color = 'rgba(255, 0, 0, 0.6)';
-                if (4===i) color = 'rgba(0, 0, 255, 0.6)';
-                if (5===i) color = 'rgba(255, 255, 255, 0.6)';
+                this.refpointsData[i] = this.refpointsData[i] || { 
+                    color: this.pointColors[ parseInt(8*Math.random()+2) ] 
+                };
+                var color = this.refpointsData[i].color;
 
                 ctx.fillStyle = background;
                 ctx.strokeStyle = "rgba(100, 100, 100, 0)";
