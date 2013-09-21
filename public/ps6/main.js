@@ -65,25 +65,19 @@ CanvasImage.prototype.getData = function() {
         this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
     }
 
-    this.avgpN = 6;
-    this.avgp = [];
-    for (var i = 0, l = this.avgpN; i < l; i++) {
-        this.avgp.push([0, 0]);
-    }
-
-    this.refpointsN = 10;
+    this.refpointsN = 16;
     this.refpoints = [];
     for (var i = 0, l = this.refpointsN; i < l; i++) {
         this.refpoints.push([]);
     }
 
-    this.refpointsDataN = 10;
+    this.refpointsDataN = 16;
     this.refpointsData = [];
     for (var i = 0, l = this.refpointsDataN; i < l; i++) {
         this.refpointsData.push([]);
     }
 
-    this.refpointsPointsN = 10;
+    this.refpointsPointsN = 16;
     this.refpointsPoints = [];
     for (var i = 0, l = this.refpointsPointsN; i < l; i++) {
         this.refpointsPoints.push([]);
@@ -145,7 +139,7 @@ CanvasImage.prototype.transform = function() {
 
     var refpoints = [],
         refpointsPoints = [],
-        maxrefpoints = 5;
+        maxrefpoints = 10;
 
     // take previous frames information when availbale
     if (this.i > this.buffersN*2) {
@@ -175,7 +169,7 @@ CanvasImage.prototype.transform = function() {
 
             var added = false;
             for (var j = 0, l = refpoints.length; j < l; j++) {
-                if (distance2([x, y], refpoints[j], 0) < 90) { // greek const
+                if (distance2([x, y], refpoints[j], 0) < 40) { // greek const
                     grid[i/4] = j;
                     refpointsPoints[j].push({ x: x, y: y });
                     added = true;
