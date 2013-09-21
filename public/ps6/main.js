@@ -74,7 +74,7 @@ CanvasImage.prototype.getData = function() {
     this.refpointsDataN = 16;
     this.refpointsData = [];
     for (var i = 0, l = this.refpointsDataN; i < l; i++) {
-        this.refpointsData.push([]);
+        //this.refpointsData.push([]);
     }
 
     this.refpointsPointsN = 16;
@@ -169,7 +169,7 @@ CanvasImage.prototype.transform = function() {
 
             var added = false;
             for (var j = 0, l = refpoints.length; j < l; j++) {
-                if (distance2([x, y], refpoints[j], 0) < 40) { // greek const
+                if (distance2([x, y], refpoints[j], 0) < 60) { // greek const
                     grid[i/4] = j;
                     refpointsPoints[j].push({ x: x, y: y });
                     added = true;
@@ -208,7 +208,7 @@ CanvasImage.prototype.transform = function() {
 
     // remove groups with not enough elements
     for (var i = 0, l = refpointsPoints.length; i < l; i++) {
-        if (refpointsPoints[i].length < 4) {
+        if (refpointsPoints[i].length < 1) {
             refpoints.splice(i, 1);
             this.refpointsData.splice(i, 1);
             refpointsPoints.splice(i, 1);
@@ -222,7 +222,7 @@ CanvasImage.prototype.transform = function() {
         this.hull.clear();
         this.hull.compute(rpoints);
         var indices = this.hull.getIndices();
-        if (indices && indices.length > 0 && indices.length > 3) {
+        if (indices && indices.length > 0 && indices.length > 1) {
 
             var rp = [rpoints[indices[0]].x, rpoints[indices[0]].y];
             var p, po, j, b1, b2, goodPoints = [], gpl = 0, avgp = [0, 0], center = [w/2, h/2];
@@ -284,7 +284,7 @@ CanvasImage.prototype.transform = function() {
                 finalAvgp[1] /= j;
 
                 //markPoint(ctx, rp[0], rp[1], 3, 'yellow');
-                markPoint(ctx, finalAvgp[0], finalAvgp[1], 10, color);
+                markPoint(ctx, finalAvgp[0], finalAvgp[1], 6, color);
 
                 refpointsPoints[i] = goodPoints;
                 refpoints[i] = avgp;
