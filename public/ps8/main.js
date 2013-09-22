@@ -193,11 +193,11 @@ CanvasImage.prototype.transform = function() {
 
     modulus = Math.sqrt(countx*countx + county*county);
     versor = [countx/modulus, county/modulus];
-    if (modulus > 0) {
+    if (modulus > 10) {
         this.direction.style.webkitTransform = 'rotate(' + (-Math.atan2(versor[1], versor[0])) + 'rad)';
         if (ballTouched) {
-            this.ballVelocity[0] -= versor[0]*modulus*.1;
-            this.ballVelocity[1] -= versor[1]*modulus*.1;
+            this.ballVelocity[0] -= versor[0]*modulus*.07;
+            this.ballVelocity[1] -= versor[1]*modulus*.07;
         }
     }
     this.ballPosition[0] += this.ballVelocity[0];
@@ -206,6 +206,9 @@ CanvasImage.prototype.transform = function() {
     this.ballVelocity[1] *= 0.8;
     
     markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 10, 'yellow');
+    if (modulus > 10 && ballTouched) { // fire effect
+        markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 12, 'rgba(255,0,0,0.5)');
+    }
 };
 
 var markPoint = function (context, x, y, radius, color) {
