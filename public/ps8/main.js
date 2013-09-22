@@ -97,14 +97,14 @@ CanvasImage.prototype.transform = function() {
         newpx = newdata.data,
         len = newpx.length;
 
-    var epsilon = 40,
+    var epsilon = 60,
         alpha = 0,
         beta = 160,
         gamma = 3,
-        omega = 8,
+        omega = 4,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
-    var p, nx, ny, dx, dy, j, prevpx, c1, c2, cx, cy, countx = county = 0, maxpx = 20, modulus, versor, pcounter = 0,
+    var p, nx, ny, dx, dy, j, prevpx, c1, c2, cx, cy, countx = county = 0, maxpx = 30, modulus, versor, pcounter = 0,
         ballTouched = false;
 
     this.setData(newdata);
@@ -127,63 +127,58 @@ CanvasImage.prototype.transform = function() {
 
 
         if (this.i > 10 && (!(x % omega) && !(y % omega)) && alpha > beta) {
-            newpx[i+0] = oldpx[i+0];
-            newpx[i+1] = oldpx[i+1];
-            newpx[i+2] = oldpx[i+2];
-            newpx[i+3] = oldpx[i+3];
-
             prevpx = this.buffers[this.buffersN-2].data;
             lastpx = this.buffers[this.buffersN-1].data;
 
             c1 = [lastpx[i+0], lastpx[i+1], lastpx[i+2]];
             
-            for (dx = 0; dx < maxpx; dx++) {
-                nx = x + dx;
-                j = (y*w + nx)*4;
-                c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
-                if (distance3(c1, c2, 0) < 50) {
-                    cx++;
-                } else {
-                    break;
-                }
-            }
-            for (dx = 0; dx > -maxpx; dx--) {
-                nx = x + dx;
-                j = (y*w + nx)*4;
-                c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
-                if (distance3(c1, c2, 0) < 50) {
-                    cx--;
-                } else {
-                    break;
-                }
-            }
-            for (dy = 0; dy < maxpx; dy++) {
-                ny = y + dy;
-                j = (ny*w + x)*4;
-                c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
-                if (distance3(c1, c2, 0) < 50) {
-                    cy++;
-                } else {
-                    break;
-                }
-            }
-            for (dy = 0; dy > -maxpx; dy--) {
-                ny = y + dy;
-                j = (ny*w + x)*4;
-                c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
-                if (distance3(c1, c2, 0) < 50) {
-                    cy--;
-                } else {
-                    break;
-                }
-            }
-            countx += cx;
-            county += cy;
-            pcounter++;
-
-            ballTouched = ballTouched || (distance2(this.ballPosition, [x-10, y-10], 0) < 10);
+            ballTouched = ballTouched || (distance2(this.ballPosition, [x, y], 0) < 10);
 
             if (distance2(this.ballPosition, [x-10, y-10], 0) < 30) {
+                for (dx = 0; dx < maxpx; dx++) {
+                    nx = x + dx;
+                    j = (y*w + nx)*4;
+                    c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
+                    if (distance3(c1, c2, 0) < 50) {
+                        cx++;
+                    } else {
+                        break;
+                    }
+                }
+                for (dx = 0; dx > -maxpx; dx--) {
+                    nx = x + dx;
+                    j = (y*w + nx)*4;
+                    c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
+                    if (distance3(c1, c2, 0) < 50) {
+                        cx--;
+                    } else {
+                        break;
+                    }
+                }
+                for (dy = 0; dy < maxpx; dy++) {
+                    ny = y + dy;
+                    j = (ny*w + x)*4;
+                    c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
+                    if (distance3(c1, c2, 0) < 50) {
+                        cy++;
+                    } else {
+                        break;
+                    }
+                }
+                for (dy = 0; dy > -maxpx; dy--) {
+                    ny = y + dy;
+                    j = (ny*w + x)*4;
+                    c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
+                    if (distance3(c1, c2, 0) < 50) {
+                        cy--;
+                    } else {
+                        break;
+                    }
+                }
+                countx += cx;
+                county += cy;
+                pcounter++;
+
                 ctx.beginPath();
                 ctx.moveTo(x, y);
                 ctx.lineTo(x+.3*cx, y+.3*cy);
@@ -198,11 +193,11 @@ CanvasImage.prototype.transform = function() {
 
     modulus = Math.sqrt(countx*countx + county*county);
     versor = [countx/modulus, county/modulus];
-    if (modulus > 10) {
+    if (modulus > 0) {
         this.direction.style.webkitTransform = 'rotate(' + (-Math.atan2(versor[1], versor[0])) + 'rad)';
         if (ballTouched) {
-            this.ballVelocity[0] -= versor[0]*modulus*.05;
-            this.ballVelocity[1] -= versor[1]*modulus*.05;
+            this.ballVelocity[0] -= versor[0]*modulus*.1;
+            this.ballVelocity[1] -= versor[1]*modulus*.1;
         }
     }
     this.ballPosition[0] += this.ballVelocity[0];
