@@ -43,8 +43,8 @@ function CanvasImage(canvas, src) {
 
         // remember the original pixels
         that.original = that.getData();
-        that.ballPosition = [i.width/2, i.height/2];
-        that.ballVelocity = [0, 0];
+        that.ballPosition = [i.width/2, i.height/2, 0];
+        that.ballVelocity = [0, 0, 0];
     };
     i.src = src;
     
@@ -97,7 +97,7 @@ CanvasImage.prototype.transform = function() {
         newpx = newdata.data,
         len = newpx.length;
 
-    var epsilon = 60,
+    var epsilon = 40,
         alpha = 0,
         beta = 160,
         gamma = 3,
@@ -107,7 +107,6 @@ CanvasImage.prototype.transform = function() {
     var p, nx, ny, dx, dy, j, prevpx, c1, c2, cx, cy, countx = county = 0, maxpx = 30, modulus, versor, pcounter = 0,
         ballTouched = false;
 
-    this.setData(newdata);
     var ctx = this.context;
 
     // iterate through the main buffer and calculate the differences with previous
@@ -119,7 +118,10 @@ CanvasImage.prototype.transform = function() {
                 alpha -= 255/l;
             }
         }
-        newpx[i+3] = parseInt(alpha*0.999);
+        newpx[i+0] = 0;
+        newpx[i+1] = 255;
+        newpx[i+2] = 0;
+        newpx[i+3] = parseInt(alpha*0.5);
 
         x = (i/4) % w;
         y = parseInt((i/4) / w);
@@ -127,14 +129,14 @@ CanvasImage.prototype.transform = function() {
 
 
         if (this.i > 10 && (!(x % omega) && !(y % omega)) && alpha > beta) {
-            prevpx = this.buffers[this.buffersN-2].data;
-            lastpx = this.buffers[this.buffersN-1].data;
-
-            c1 = [lastpx[i+0], lastpx[i+1], lastpx[i+2]];
             
             ballTouched = ballTouched || (distance2(this.ballPosition, [x, y], 0) < 10);
 
             if (distance2(this.ballPosition, [x-10, y-10], 0) < 30) {
+                prevpx = this.buffers[this.buffersN-2].data;
+                lastpx = this.buffers[this.buffersN-1].data;
+                c1 = [lastpx[i+0], lastpx[i+1], lastpx[i+2]];
+
                 for (dx = 0; dx < maxpx; dx++) {
                     nx = x + dx;
                     j = (y*w + nx)*4;
@@ -179,6 +181,7 @@ CanvasImage.prototype.transform = function() {
                 county += cy;
                 pcounter++;
 
+                /*
                 ctx.beginPath();
                 ctx.moveTo(x, y);
                 ctx.lineTo(x+.3*cx, y+.3*cy);
@@ -186,10 +189,12 @@ CanvasImage.prototype.transform = function() {
                 ctx.lineWidth = 1;
                 ctx.strokeStyle = 'rgba(' + (150+3*cx) + ', 0, ' + (150+3*cy) + ', 0.7)';
                 ctx.stroke();
+                */
             }
 
         }
     }
+    this.setData(newdata);
 
     modulus = Math.sqrt(countx*countx + county*county);
     versor = [countx/modulus, county/modulus];
@@ -200,15 +205,70 @@ CanvasImage.prototype.transform = function() {
             this.ballVelocity[1] -= versor[1]*modulus*.07;
         }
     }
+    this.ballVelocity[1] += 1;
+
     this.ballPosition[0] += this.ballVelocity[0];
     this.ballPosition[1] += this.ballVelocity[1];
-    this.ballVelocity[0] *= 0.8;
-    this.ballVelocity[1] *= 0.8;
+
+    p = this.ballPosition;
+
+    if (p[0] < 0 + 10) {
+        this.processCollision([1, 0, 0]);
+    }
+    if (p[0] > w - 10) {
+        this.processCollision([-1, 0, 0]);
+    }
+    if (p[1] < 0 + 10) {
+        this.processCollision([0, 1, 0]);
+    }
+    if (p[1] > h - 10) {
+        this.processCollision([0, -1, 0]);
+    }
+
+    this.ballVelocity[0] *= 0.99;
+    this.ballVelocity[1] *= 0.99;
     
     markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 10, 'yellow');
     if (modulus > 10 && ballTouched) { // fire effect
         markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 12, 'rgba(255,0,0,0.5)');
     }
+};
+
+CanvasImage.prototype.processCollision = function(normal) {
+    var v1 = this.ballVelocity,
+        v2 = this.ballVelocity.v3_reflect(normal);
+        oldv = this.ballVelocity;
+    this.ballPosition[0] -= oldv[0];
+    this.ballPosition[1] -= oldv[1];
+    this.ballVelocity = v1.v3_cos(v2) > 0.987 ? [0, 0, 0] : v2.v3_dotProduct(0.89); // velocity decreases by 11%
+    this.ballPosition[0] += this.ballVelocity[0];
+    this.ballPosition[1] += this.ballVelocity[1];
+};
+
+ Array.prototype.v3_reflect = function (normal) {
+    var reflectedVector = [],
+        vector = this,
+        dotProduct = ((vector[0] * normal[0]) + (vector[1] * normal[1])) + (vector[2] * normal[2]);
+    reflectedVector[0] = vector[0] - (2 * normal[0]) * dotProduct;
+    reflectedVector[1] = vector[1] - (2 * normal[1]) * dotProduct;
+    reflectedVector[2] = vector[2] - (2 * normal[2]) * dotProduct;
+    return reflectedVector;
+};
+Array.prototype.v3_cos = function (b) {
+    var a = this;
+    return a.v3_dotProduct(b)/(a.v3_getModule()*b.v3_getModule());
+};
+Array.prototype.v3_dotProduct = function (value) {
+    var a = this;
+    if (typeof value === 'number') {
+        return [a[0]*value, a[1]*value, a[2]*value];
+    } else {
+        return [a[0]*value[0], a[1]*value[1], a[2]*value[2]];
+    } 
+};
+Array.prototype.v3_getModule = function () {
+    var vector = this;
+    return Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
 };
 
 var markPoint = function (context, x, y, radius, color) {
