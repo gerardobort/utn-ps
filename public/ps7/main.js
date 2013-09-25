@@ -97,10 +97,13 @@ CanvasImage.prototype.transform = function() {
         alpha = 0,
         beta = 160,
         gamma = 3,
-        omega = 8,
+        omega = 4,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
-    var p, points = [], avgp = [w/2, h/2];
+    var p, nx, ny, dx, dy, j, prevpx, c1, c2, cx, cy, countx = county = 0;
+
+    this.setData(newdata);
+    var ctx = this.context;
 
     // iterate through the main buffer and calculate the differences with previous
     for (i = 0; i < len; i += 4) {
@@ -115,18 +118,85 @@ CanvasImage.prototype.transform = function() {
 
         x = (i/4) % w;
         y = parseInt((i/4) / w);
+        cx = cy = 0;
         if (this.i > 10 && (!(x % omega) && !(y % omega)) && alpha > beta) {
             newpx[i+0] = oldpx[i+0];
             newpx[i+1] = oldpx[i+1];
             newpx[i+2] = oldpx[i+2];
             newpx[i+3] = oldpx[i+3];
+
+
+            prevpx = this.buffers[this.buffersN-2].data;
+            lastpx = this.buffers[this.buffersN-1].data;
+
+            c1 = [lastpx[i+0], lastpx[i+1], lastpx[i+2]];
+            
+            for (dx = 0; dx < 30; dx++) {
+                nx = x + dx;
+                j = (y*w + nx)*4;
+                c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
+                if (distance3(c1, c2, 0) < 50) {
+                    cx++;
+                } else {
+                    break;
+                }
+            }
+            for (dx = 0; dx > -30; dx--) {
+                nx = x + dx;
+                j = (y*w + nx)*4;
+                c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
+                if (distance3(c1, c2, 0) < 50) {
+                    cx--;
+                } else {
+                    break;
+                }
+            }
+            for (dy = 0; dy < 30; dy++) {
+                ny = y + dy;
+                j = (ny*w + x)*4;
+                c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
+                if (distance3(c1, c2, 0) < 50) {
+                    cy++;
+                } else {
+                    break;
+                }
+            }
+            for (dy = 0; dy > -30; dy--) {
+                ny = y + dy;
+                j = (ny*w + x)*4;
+                c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
+                if (distance3(c1, c2, 0) < 50) {
+                    cy--;
+                } else {
+                    break;
+                }
+            }
+            countx += cx;
+            county += cy;
+
+            // Filled triangle
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x+cx, y+cy);
+            ctx.closePath();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(' + (150+3*cx) + ', 0, ' + (150+3*cy) + ', 0.7)';
+            ctx.stroke();
         }
     }
+    var t = '';
+    if (countx > 0) {
+        t += '>';
+    } else {
+        t += '<';
+    }
+    if (county > 0) {
+        t += '^';
+    } else {
+        t += 'v';
+    }
+    document.title = t + '  ' + countx + '  ' + county;
 
-    this.setData(newdata);
-
-    // calculate and generate point groups based on density 
-    var ctx = this.context;
 };
 
 var markPoint = function (context, x, y, radius, color) {
