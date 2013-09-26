@@ -185,7 +185,7 @@ CanvasImage.prototype.transform = function() {
             ctx.stroke();
         }
     }
-    if (distance2([0,0], [countx,county], 0) > 150) {
+    if (distance2([0,0], [countx,county], 0) > 50) {
         this.direction.style.webkitTransform = 'rotate(' + (-Math.atan2(county, countx)) +'rad)';
         this.direction.style.display = 'block';
     } else {
