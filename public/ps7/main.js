@@ -52,6 +52,7 @@ function CanvasImage(canvas, src) {
 
     this.i = 0;
     this.hull = new ConvexHull();
+    this.direction = $('direction');
 }
 
 CanvasImage.prototype.getData = function() {
@@ -97,7 +98,7 @@ CanvasImage.prototype.transform = function() {
         alpha = 0,
         beta = 160,
         gamma = 3,
-        omega = 4,
+        omega = 8,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
     var p, nx, ny, dx, dy, j, prevpx, c1, c2, cx, cy, countx = county = 0;
@@ -177,26 +178,19 @@ CanvasImage.prototype.transform = function() {
             // Filled triangle
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x+cx, y+cy);
+            ctx.lineTo(x+.3*cx, y+.3*cy);
             ctx.closePath();
             ctx.lineWidth = 1;
             ctx.strokeStyle = 'rgba(' + (150+3*cx) + ', 0, ' + (150+3*cy) + ', 0.7)';
             ctx.stroke();
         }
     }
-    var t = '';
-    if (countx > 0) {
-        t += '>';
+    if (distance2([0,0], [countx,county], 0) > 150) {
+        this.direction.style.webkitTransform = 'rotate(' + (-Math.atan2(county, countx)) +'rad)';
+        this.direction.style.display = 'block';
     } else {
-        t += '<';
+        this.direction.style.display = 'none';
     }
-    if (county > 0) {
-        t += '^';
-    } else {
-        t += 'v';
-    }
-    document.title = t + '  ' + countx + '  ' + county;
-
 };
 
 var markPoint = function (context, x, y, radius, color) {
