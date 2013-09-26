@@ -53,6 +53,8 @@ function CanvasImage(canvas, src) {
     this.i = 0;
     this.hull = new ConvexHull();
     this.direction = $('direction');
+    this.ball = $('ball');
+    this.ballPosition = [0, 0];
 }
 
 CanvasImage.prototype.getData = function() {
@@ -101,7 +103,7 @@ CanvasImage.prototype.transform = function() {
         omega = 8,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
-    var p, nx, ny, dx, dy, j, prevpx, c1, c2, cx, cy, countx = county = 0;
+    var p, nx, ny, dx, dy, j, prevpx, c1, c2, cx, cy, countx = county = 0, maxpx = 20, modulus, versor, pcounter = 0;
 
     this.setData(newdata);
     var ctx = this.context;
@@ -132,7 +134,7 @@ CanvasImage.prototype.transform = function() {
 
             c1 = [lastpx[i+0], lastpx[i+1], lastpx[i+2]];
             
-            for (dx = 0; dx < 30; dx++) {
+            for (dx = 0; dx < maxpx; dx++) {
                 nx = x + dx;
                 j = (y*w + nx)*4;
                 c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
@@ -142,7 +144,7 @@ CanvasImage.prototype.transform = function() {
                     break;
                 }
             }
-            for (dx = 0; dx > -30; dx--) {
+            for (dx = 0; dx > -maxpx; dx--) {
                 nx = x + dx;
                 j = (y*w + nx)*4;
                 c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
@@ -152,7 +154,7 @@ CanvasImage.prototype.transform = function() {
                     break;
                 }
             }
-            for (dy = 0; dy < 30; dy++) {
+            for (dy = 0; dy < maxpx; dy++) {
                 ny = y + dy;
                 j = (ny*w + x)*4;
                 c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
@@ -162,7 +164,7 @@ CanvasImage.prototype.transform = function() {
                     break;
                 }
             }
-            for (dy = 0; dy > -30; dy--) {
+            for (dy = 0; dy > -maxpx; dy--) {
                 ny = y + dy;
                 j = (ny*w + x)*4;
                 c2 = [prevpx[j+0], prevpx[j+1], prevpx[j+2]];
@@ -174,6 +176,7 @@ CanvasImage.prototype.transform = function() {
             }
             countx += cx;
             county += cy;
+            pcounter++;
 
             // Filled triangle
             ctx.beginPath();
@@ -185,12 +188,15 @@ CanvasImage.prototype.transform = function() {
             ctx.stroke();
         }
     }
-    if (distance2([0,0], [countx,county], 0) > 50) {
-        this.direction.style.webkitTransform = 'rotate(' + (-Math.atan2(county, countx)) +'rad)';
-        this.direction.style.display = 'block';
-    } else {
-        this.direction.style.display = 'none';
+
+    modulus = Math.sqrt(countx*countx + county*county);
+    versor = [countx/modulus, county/modulus];
+    if (modulus > 10) {
+        this.direction.style.webkitTransform = 'rotate(' + (-Math.atan2(versor[1], versor[0])) + 'rad)';
+        this.ballPosition[0] += versor[0]*modulus*.1;
+        this.ballPosition[1] -= versor[1]*modulus*.1;
     }
+    this.ball.style.webkitTransform = 'translate(' + this.ballPosition.join('px, ') + 'px)';
 };
 
 var markPoint = function (context, x, y, radius, color) {
