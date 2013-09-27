@@ -60,7 +60,7 @@ function CanvasImage(canvas, src) {
 
 CanvasImage.prototype.getData = function() {
     // initialize variables
-    this.buffersN = 4;
+    this.buffersN = 2;
     this.buffers = [];
     for (var i = 0, l = this.buffersN; i < l; i++) {
         this.buffers.push(this.context.createImageData(this.image.width, this.image.width));
@@ -101,10 +101,11 @@ CanvasImage.prototype.transform = function() {
         alpha = 0,
         beta = 160,
         gamma = 3,
-        omega = 4,
+        omega = 2,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
     var p, nx, ny, dx, dy, j, prevpx, c1, c2, cx, cy, countx = county = 0, maxpx = 30, modulus, versor, pcounter = 0,
+        forceRadio = 40, collisionRadio = 10, r,
         ballTouched = false;
 
     var ctx = this.context;
@@ -118,21 +119,22 @@ CanvasImage.prototype.transform = function() {
                 alpha -= 255/l;
             }
         }
-        newpx[i+0] = 0;
-        newpx[i+1] = 255;
-        newpx[i+2] = 0;
-        newpx[i+3] = parseInt(alpha*0);
 
         x = (i/4) % w;
         y = parseInt((i/4) / w);
         cx = cy = 0;
 
-
-        if (this.i > 10 && (!(x % omega) && !(y % omega)) && alpha > beta) {
+        if (this.i > 10 && (!(x % omega) && !(y % omega)) && alpha > beta && 
+            (r = distance2(this.ballPosition, [x, y], 0)) && r < forceRadio
+            ) {
             
-            ballTouched = ballTouched || (distance2(this.ballPosition, [x, y], 0) < 10);
+            ballTouched = ballTouched || r < collisionRadio;
+            newpx[i+0] = 255;
+            newpx[i+1] = parseInt(alpha);
+            newpx[i+2] = 0;
+            newpx[i+3] = 255-parseInt((r/forceRadio)*255);
 
-            if (distance2(this.ballPosition, [x-10, y-10], 0) < 30) {
+            if (r < forceRadio) {
                 prevpx = this.buffers[this.buffersN-2].data;
                 lastpx = this.buffers[this.buffersN-1].data;
                 c1 = [lastpx[i+0], lastpx[i+1], lastpx[i+2]];
@@ -198,30 +200,34 @@ CanvasImage.prototype.transform = function() {
 
     modulus = Math.sqrt(countx*countx + county*county);
     versor = [countx/modulus, county/modulus];
-    if (modulus > 10) {
-        this.direction.style.webkitTransform = 'rotate(' + (-Math.atan2(versor[1], versor[0])) + 'rad)';
+    if (modulus > 30) {
         if (ballTouched) {
-            this.ballVelocity[0] -= versor[0]*modulus*.04;
-            this.ballVelocity[1] -= versor[1]*modulus*.04;
+            if (modulus > 50) {
+                // reduce the previous velocity
+                this.ballVelocity[0] *= .5;
+                this.ballVelocity[1] *= .5;
+            }
+            this.ballVelocity[0] -= versor[0]*modulus*.03;
+            this.ballVelocity[1] -= versor[1]*modulus*.03;
         }
     }
-    this.ballVelocity[1] += 1;
+    this.ballVelocity[1] += 0.7;
 
     this.ballPosition[0] += this.ballVelocity[0];
     this.ballPosition[1] += this.ballVelocity[1];
 
     p = this.ballPosition;
 
-    if (p[0] < 0 + 10) {
+    if (p[0] < 0 + collisionRadio) {
         this.processCollision([1, 0, 0]);
     }
-    if (p[0] > w - 10) {
+    if (p[0] > w - collisionRadio) {
         this.processCollision([-1, 0, 0]);
     }
-    if (p[1] < 0 + 10) {
+    if (p[1] < 0 + collisionRadio) {
         this.processCollision([0, 1, 0]);
     }
-    if (p[1] > h - 10) {
+    if (p[1] > h - collisionRadio) {
         this.processCollision([0, -1, 0]);
     }
 
@@ -229,7 +235,7 @@ CanvasImage.prototype.transform = function() {
     this.ballVelocity[1] *= 0.99;
     
     markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 10, 'yellow');
-    if (modulus > 10 && ballTouched) { // fire effect
+    if (modulus > 30 && ballTouched) { // fire effect
         markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 12, 'rgba(255,0,0,0.5)');
     }
 };
@@ -282,8 +288,8 @@ var markPoint = function (context, x, y, radius, color) {
 };
 
 var transformadores = [
-    new CanvasImage($('canvas1'), 'color-bars-medium.jpg'),
-    new CanvasImage($('canvas2'), 'color-bars-medium.jpg'),
+    new CanvasImage($('canvas1'), 'color-bars-large.png'),
+    new CanvasImage($('canvas2'), 'color-bars-large.png'),
 ];
 
 
