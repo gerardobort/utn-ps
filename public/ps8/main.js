@@ -121,7 +121,7 @@ CanvasImage.prototype.transform = function() {
         newpx[i+0] = 0;
         newpx[i+1] = 255;
         newpx[i+2] = 0;
-        newpx[i+3] = parseInt(alpha*0.5);
+        newpx[i+3] = parseInt(alpha*0);
 
         x = (i/4) % w;
         y = parseInt((i/4) / w);
@@ -201,8 +201,8 @@ CanvasImage.prototype.transform = function() {
     if (modulus > 10) {
         this.direction.style.webkitTransform = 'rotate(' + (-Math.atan2(versor[1], versor[0])) + 'rad)';
         if (ballTouched) {
-            this.ballVelocity[0] -= versor[0]*modulus*.07;
-            this.ballVelocity[1] -= versor[1]*modulus*.07;
+            this.ballVelocity[0] -= versor[0]*modulus*.04;
+            this.ballVelocity[1] -= versor[1]*modulus*.04;
         }
     }
     this.ballVelocity[1] += 1;
