@@ -46,6 +46,7 @@ function CanvasImage(canvas, src) {
         that.ballPosition = [i.width/2, i.height/2, 0];
         that.ballVelocity = [0, 0, 0];
         that.ballOrientation = 1;
+        that.ballAngle = 0;
     };
     i.src = src;
     
@@ -233,12 +234,14 @@ CanvasImage.prototype.transform = function() {
 
     this.ballVelocity[0] *= 0.99;
     this.ballVelocity[1] *= 0.99;
-    
+
+    this.ballAngle += (this.ballVelocity[0] > 0 ? -1 : 1)*0.2*Math.abs(Math.atan2(this.ballVelocity[1], this.ballVelocity[0]));
+
     //markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 10, 'yellow');
     this.ball.style.webkitTransform = 'translate(' + 
             ((-this.ballPosition[0]/w)*document.width + document.width/2) + 'px, ' + 
             ((this.ballPosition[1]/h)*document.height - document.height/2) +  'px) ' +
-            'rotate(' + (Math.atan2(this.ballVelocity[1], this.ballVelocity[0])*5) + 'rad)';
+            'rotate(' + this.ballAngle + 'rad)';
 
     if (modulus > 30 && ballTouched) { // fire effect
         //markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 12, 'rgba(255,0,0,0.5)');
@@ -254,7 +257,9 @@ CanvasImage.prototype.processCollision = function(normal) {
     this.ballVelocity = v1.v3_cos(v2) > 0.987 ? [0, 0, 0] : v2.v3_dotProduct(0.89); // velocity decreases by 11%
     this.ballPosition[0] += this.ballVelocity[0];
     this.ballPosition[1] += this.ballVelocity[1];
-    this.ballOrientation *= -1;
+    if (v1.v3_cos(v2) < 0.5) {
+        this.ballAngle = 0;
+    }
 };
 
  Array.prototype.v3_reflect = function (normal) {
