@@ -101,7 +101,7 @@ CanvasImage.prototype.transform = function() {
         alpha = 0,
         beta = 160,
         gamma = 3,
-        omega = 2,
+        omega = 4,
         i = x = y = 0, w = olddata.width, h = olddata.height;
 
     var p, nx, ny, dx, dy, j, prevpx, c1, c2, cx, cy, countx = county = 0, maxpx = 30, modulus, versor, pcounter = 0,
@@ -237,14 +237,10 @@ CanvasImage.prototype.transform = function() {
 
     this.ballAngle += (this.ballVelocity[0] > 0 ? -1 : 1)*0.2*Math.abs(Math.atan2(this.ballVelocity[1], this.ballVelocity[0]));
 
-    //markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 10, 'yellow');
-    this.ball.style.webkitTransform = 'translate(' + 
-            ((-this.ballPosition[0]/w)*document.width + document.width/2) + 'px, ' + 
-            ((this.ballPosition[1]/h)*document.height - document.height/2) +  'px) ' +
-            'rotate(' + this.ballAngle + 'rad)';
+    markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 10, 'yellow');
 
     if (modulus > 30 && ballTouched) { // fire effect
-        //markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 12, 'rgba(255,0,0,0.5)');
+        markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 12, 'rgba(255,0,0,0.5)');
     }
 };
 
@@ -299,8 +295,8 @@ var markPoint = function (context, x, y, radius, color) {
 };
 
 var transformadores = [
-    new CanvasImage($('canvas1'), 'color-bars-large.png'),
-    new CanvasImage($('canvas2'), 'color-bars-large.png'),
+    new CanvasImage($('canvas1'), 'color-bars.png'),
+    new CanvasImage($('canvas2'), 'color-bars.png'),
 ];
 
 
