@@ -1,4 +1,3 @@
-
 function $(id) { return document.getElementById(id); }
 
 navigator.webkitGetUserMedia(
@@ -73,9 +72,12 @@ CanvasImage.prototype.setData = function(data) {
     return this.context.putImageData(data, 0, 0);
 };
 
+//Distancia entre dos puntos en el espacio x y
 var distance2 = function (v1, v2, i) {
     return Math.sqrt(Math.pow(v1[i+0] - v2[i+0], 2) + Math.pow(v1[i+1] - v2[i+1], 2));
 };
+
+//Distancia entre dos puntos en el espacio x y z, 
 var distance3 = function (v1, v2, i) {
     return Math.sqrt(Math.pow(v1[i+0] - v2[i+0], 2) + Math.pow(v1[i+1] - v2[i+1], 2) + Math.pow(v1[i+2] - v2[i+2], 2));
 };
@@ -86,6 +88,8 @@ CanvasImage.prototype.transform = function() {
     for (var i = 0, l = this.buffersN-1; i < l; i++) {
         this.buffers[i] = this.buffers[i+1];
     }
+    
+    //Se crea un bufer a partir del streaming
     this.buffers[this.buffersN-1] = this.context.createImageData(this.original.width, this.original.height);
     this.buffers[this.buffersN-1].data.set(this.original.data);
 
@@ -112,18 +116,30 @@ CanvasImage.prototype.transform = function() {
 
     // iterate through the main buffer and calculate the differences with previous
     for (i = 0; i < len; i += 4) {
-        // change the alpha channel based on the frame color differences
+        // change the alpha channel based on the frame color differences 
+        // Me quedo con los alphas que no fueron disminuyendo. 
+        // Me qeudo con la la parte que fue cambiando
         alpha = 255;
         for (var j = 0, l = this.buffersN-1; j < l; j++) {
             if (distance3(this.buffers[j].data, this.buffers[j+1].data, i) < epsilon) {
+                //no fue variando el color en la imagen, disminuyo alpha
                 alpha -= 255/l;
             }
         }
 
+        //Sacamos el punto (x,y)de acuerdo a la posicion en el buffer almacenado
         x = (i/4) % w;
         y = parseInt((i/4) / w);
         cx = cy = 0;
 
+        //arranco a partir de los 10 frames 
+        // no se procesa los pixelels "impares" para optimizar procesamiento
+        // alpha > beta solo los puntos que se movieron 
+        // se toma un radio por fuera de la pelotita (para tener mas pnutos para calcular la fuerza)  y si el punto esta 
+        // dentro de ese radio se tiene en cuenta
+        // r es la distancia entre la pelota y cada uno de esos pixels
+        // ballTouched es un flag para saber si se toco o no la pelotita para todo el buffer
+        
         if (this.i > 10 && (!(x % omega) && !(y % omega)) && alpha > beta && 
             (r = distance2(this.ballPosition, [x, y], 0)) && r < forceRadio
             ) {
@@ -134,11 +150,17 @@ CanvasImage.prototype.transform = function() {
             newpx[i+2] = 0;
             newpx[i+3] = 0;//255-parseInt((r/forceRadio)*255);
 
-            if (r < forceRadio) {
+            if (r < forceRadio) { // redundante
                 prevpx = this.buffers[this.buffersN-2].data;
                 lastpx = this.buffers[this.buffersN-1].data;
                 c1 = [lastpx[i+0], lastpx[i+1], lastpx[i+2]];
 
+                // Me paro en cada pixel y comparo con los buffers anteriores en pixeles aledaños
+                // si el color es similar (menor a una cte)
+                // Esto lo hago a derecha e izquierda, para un lado sumo y otro resto, de esta forma
+                // obtengo la componente x del vector de direccion
+            
+                
                 for (dx = 0; dx < maxpx; dx++) {
                     nx = x + dx;
                     j = (y*w + nx)*4;
@@ -159,6 +181,10 @@ CanvasImage.prototype.transform = function() {
                         break;
                     }
                 }
+                
+                // Esto lo hago a derecha e izquierda, para un lado sumo y otro resto, de esta forma
+                // obtengo la componente x del vector de direccion
+                // Luego lo mismo para y, y obtengo el resultante entre esos 2 vectores
                 for (dy = 0; dy < maxpx; dy++) {
                     ny = y + dy;
                     j = (ny*w + x)*4;
@@ -179,6 +205,8 @@ CanvasImage.prototype.transform = function() {
                         break;
                     }
                 }
+                
+                // aca se suman las fuerzas de todos los pixels y queda el vector final q se le aplica a la bola
                 countx += cx;
                 county += cy;
                 pcounter++;
@@ -200,24 +228,37 @@ CanvasImage.prototype.transform = function() {
 
     modulus = Math.sqrt(countx*countx + county*county);
     versor = [countx/modulus, county/modulus];
+    
+    //moduluz > 30 para acotar el error de cualquier ruido en la camara
     if (modulus > 30) {
         if (ballTouched) {
             if (modulus > 50) {
                 // reduce the previous velocity
+                //desacelación antes de aplicar la nueva velocdiad
                 this.ballVelocity[0] *= .5;
                 this.ballVelocity[1] *= .5;
                 this.ballOrientation[1] *= -1;
             }
+            
+            //cambiamos la velocidad de la bocha, en base al versor y al modulo
+            //el versor indica dese donde viene el movimiento de impacto y no hacia donde va
+            
             this.ballVelocity[0] -= versor[0]*modulus*.03;
             this.ballVelocity[1] -= versor[1]*modulus*.03;
         }
     }
+    
+    
     this.ballVelocity[1] += 0.7;
 
     this.ballPosition[0] += this.ballVelocity[0];
     this.ballPosition[1] += this.ballVelocity[1];
 
     p = this.ballPosition;
+
+    //Colisiones contra las parecedes de la pantalla
+    //Aplica fuera inversa, anula movimiento
+    
 
     if (p[0] < 0 + collisionRadio) {
         this.processCollision([1, 0, 0]);
@@ -232,6 +273,9 @@ CanvasImage.prototype.transform = function() {
         this.processCollision([0, -1, 0]);
     }
 
+
+    
+    // desaceleracion a traves del paso del tiempo
     this.ballVelocity[0] *= 0.99;
     this.ballVelocity[1] *= 0.99;
 
