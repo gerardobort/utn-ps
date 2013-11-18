@@ -1,3 +1,47 @@
 <div class="offset1">
-    <h1>Hello world!</h1>
+    <h1>Procesamiento de Señales</h1>
+    <h2>Prototipos</h2>
+    <ol>
+        <li>
+            <h3>Filtros</h3>
+            <p>Pantalla dividida en cuatro con un par de filtros para detectar borders. <a href="/ps1">ver</a></p>
+        </li>
+        <li>
+            <h3>Detección de movimiento</h3>
+            <p>En el cuarto panel se puede visualizar las estelas de movimiento en diferetes intensidades de alfa con color verde sobre negro. <a href="/ps2">ver</a></p>
+        </li>
+        <li>
+            <h3>Detección de <strong>un solo</strong> objeto en movimiento</h3>
+            <p>Se capturan los puntos en movimiento más hacia la izquierda y más hacia la derecha, en base a estos puntos se calcula un envoltorio (convex-hull) y se pinta con bordes blancos y color verde transtarente. <a href="/ps3">ver</a></p>
+        </li>
+        <li>
+            <h3>Detección de <strong>un solo</strong> objeto en movimiento con memoria</h3>
+            <p>Para dar un efecto de continuidad en las figuras del ejemplo anterior, se le agrega buffers para recordar los puntos de los envoltorios de cuadros anteriores. <a href="/ps4">ver</a></p>
+        </li>
+        <li>
+            <h3>Control de elementos de la pantalla</h3>
+            <h3>Ejemplo de rotación de un elemento HTML en función del movimiento de lo detectado en cámara.  No quedó muy bueno.</h3>
+            <p><a href="/ps5">ver</a></p>
+        </li>
+        <li>
+            <h3>Detección de movimiento <strong>multi-punto</strong></h3>
+            <p>Se intenta "seguir" a los objetos en movimiento segun similitud de color y cercanía en distancia. <a href="/ps6">ver</a></p>
+        </li>
+        <li>
+            <h3>Dirección del movimiento total</h3>
+            <p>Se calcula por cada "punto en movimiento" un vector con intensidad y dirección.  La sumatoria de todos estos vectores tiende a señalar el "movimiento total" capturado. La flecha verde indica la dirección, la carita amarilla se mueve en esa dirección. <a href="/ps7">ver</a></p>
+        </li>
+        <li>
+            <h3>Juego con una pelotita amarilla</h3>
+            <p>La pelotita rebota en los bordes de la pantalla, y cuando es colisionada por un objeto en movimiento se pone naranja.  Se visualiza a su vez los puntos de contacto de la colisión. <a href="/ps8">ver</a></p>
+        </li>
+        <li>
+            <h3>Juego con una pelotita de fútbol</h3>
+            <p>Similar al anterior (PS8), pero con un poco más de estética. <a href="/ps9">ver</a></p>
+        </li>
+        <li>
+            <h3>Juego con una pelotita de fútbol</h3>
+            <p>Similar a PS8, pero con un canvas más chico y es más performante. <a href="/ps10">ver</a></p>
+        </li>
+    </ol>
 </div>
