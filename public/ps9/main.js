@@ -239,8 +239,8 @@ CanvasImage.prototype.transform = function() {
 
     //markPoint(ctx, this.ballPosition[0], this.ballPosition[1], 10, 'yellow');
     this.ball.style.webkitTransform = 'translate(' + 
-            ((-this.ballPosition[0]/w)*document.width + document.width/2) + 'px, ' + 
-            ((this.ballPosition[1]/h)*document.height - document.height/2) +  'px) ' +
+            ((-this.ballPosition[0]/w)*window.innerWidth + window.innerWidth/2) + 'px, ' + 
+            ((this.ballPosition[1]/h)*window.innerHeight - window.innerHeight/2) +  'px) ' +
             'rotate(' + this.ballAngle + 'rad)';
 
     if (modulus > 30 && ballTouched) { // fire effect
